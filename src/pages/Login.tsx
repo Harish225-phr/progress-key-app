@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { GraduationCap } from "lucide-react";
 
 const Login = () => {
@@ -14,52 +13,51 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      // Query the users table to verify credentials
-      const { data: userData, error: queryError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("email", email)
-        .eq("password_hash", password)
-        .single();
+    // Hardcoded credentials - NO API calls
+    const hardcodedUsers = [
+      { email: "superadmin@gmail.com", password: "abc123", role: "SUPER_ADMIN", full_name: "Super Admin" },
+      { email: "classteacher@gmail.com", password: "abc123", role: "CLASS_TEACHER", full_name: "Class Teacher" },
+      { email: "subjectteacher@gmail.com", password: "abc123", role: "SUBJECT_TEACHER", full_name: "Subject Teacher" },
+      { email: "parentchild@gmail.com", password: "abc123", role: "STUDENT_PARENT", full_name: "Parent/Student" },
+    ];
 
-      if (queryError || !userData) {
-        toast.error("Invalid email or password");
-        setLoading(false);
-        return;
-      }
+    // Find matching user
+    const user = hardcodedUsers.find(u => u.email === email && u.password === password);
 
-      // Store user data in session storage for role-based routing
-      sessionStorage.setItem("user", JSON.stringify(userData));
-
-      toast.success("Login successful!");
-
-      // Route based on role
-      switch (userData.role) {
-        case "SUPER_ADMIN":
-          navigate("/admin");
-          break;
-        case "CLASS_TEACHER":
-          navigate("/class-teacher");
-          break;
-        case "SUBJECT_TEACHER":
-          navigate("/subject-teacher");
-          break;
-        case "STUDENT_PARENT":
-          navigate("/student");
-          break;
-        default:
-          navigate("/");
-      }
-    } catch (error) {
-      toast.error("An error occurred during login");
-    } finally {
+    if (!user) {
+      toast.error("Invalid email or password");
       setLoading(false);
+      return;
     }
+
+    // Store user data in session storage for role-based routing
+    sessionStorage.setItem("user", JSON.stringify(user));
+
+    toast.success("Login successful!");
+
+    // Route based on role
+    switch (user.role) {
+      case "SUPER_ADMIN":
+        navigate("/admin");
+        break;
+      case "CLASS_TEACHER":
+        navigate("/class-teacher");
+        break;
+      case "SUBJECT_TEACHER":
+        navigate("/subject-teacher");
+        break;
+      case "STUDENT_PARENT":
+        navigate("/student");
+        break;
+      default:
+        navigate("/");
+    }
+
+    setLoading(false);
   };
 
   return (
