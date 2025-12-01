@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { DollarSign, Calendar } from "lucide-react";
+import { DollarSign, Calendar, Plus } from "lucide-react";
 
 const mockFeeData = [
   { id: 1, studentName: "John Smith", roll: "101", status: "Paid", lastUpdated: "2024-03-15" },
@@ -41,6 +42,12 @@ export default function FeeStatus() {
   const [feeData, setFeeData] = useState(mockFeeData);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [isPaid, setIsPaid] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newStudent, setNewStudent] = useState({
+    studentName: "",
+    roll: "",
+    status: "Pending",
+  });
 
   const handleUpdateFee = () => {
     if (selectedStudent) {
@@ -60,6 +67,26 @@ export default function FeeStatus() {
     }
   };
 
+  const handleAddStudent = () => {
+    if (!newStudent.studentName || !newStudent.roll) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    
+    const student = {
+      id: feeData.length + 1,
+      studentName: newStudent.studentName,
+      roll: newStudent.roll,
+      status: newStudent.status,
+      lastUpdated: new Date().toISOString().split("T")[0],
+    };
+    
+    setFeeData((prev) => [...prev, student]);
+    toast.success(`${newStudent.studentName} added successfully`);
+    setShowAddDialog(false);
+    setNewStudent({ studentName: "", roll: "", status: "Pending" });
+  };
+
   const openUpdateModal = (student: any) => {
     setSelectedStudent(student);
     setIsPaid(student.status === "Paid");
@@ -74,9 +101,15 @@ export default function FeeStatus() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Fee Status</h1>
-        <p className="text-muted-foreground">Manage and track student fee payments</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Fee Status</h1>
+          <p className="text-muted-foreground">Manage and track student fee payments</p>
+        </div>
+        <Button onClick={() => setShowAddDialog(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Student
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -188,6 +221,57 @@ export default function FeeStatus() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Student to Fee Status</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="studentName">Student Name</Label>
+              <Input
+                id="studentName"
+                placeholder="Enter student name"
+                value={newStudent.studentName}
+                onChange={(e) => setNewStudent({ ...newStudent, studentName: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="roll">Roll Number</Label>
+              <Input
+                id="roll"
+                placeholder="Enter roll number"
+                value={newStudent.roll}
+                onChange={(e) => setNewStudent({ ...newStudent, roll: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="feeStatus">Initial Fee Status</Label>
+              <Select value={newStudent.status} onValueChange={(value) => setNewStudent({ ...newStudent, status: value })}>
+                <SelectTrigger id="feeStatus">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Paid">Paid</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-3 pt-4">
+              <Button onClick={handleAddStudent} className="flex-1">
+                Add Student
+              </Button>
+              <Button variant="outline" onClick={() => {
+                setShowAddDialog(false);
+                setNewStudent({ studentName: "", roll: "", status: "Pending" });
+              }}>
+                Cancel
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
