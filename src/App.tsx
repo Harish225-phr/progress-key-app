@@ -19,7 +19,16 @@ import Materials from "./pages/admin/Materials";
 import Homework from "./pages/admin/Homework";
 import Announcements from "./pages/admin/Announcements";
 import Fees from "./pages/admin/Fees";
-import ClassTeacherDashboard from "./pages/ClassTeacherDashboard";
+import ClassTeacherLayout from "./components/ClassTeacherLayout";
+import ClassTeacherDashboard from "./pages/class-teacher/Dashboard";
+import StudentList from "./pages/class-teacher/StudentList";
+import StudentProfile from "./pages/class-teacher/StudentProfile";
+import MarkAttendance from "./pages/class-teacher/MarkAttendance";
+import AttendanceHistory from "./pages/class-teacher/AttendanceHistory";
+import LeaveRequests from "./pages/class-teacher/LeaveRequests";
+import FeeStatus from "./pages/class-teacher/FeeStatus";
+import ClassOverview from "./pages/class-teacher/ClassOverview";
+import ClassAnnouncements from "./pages/class-teacher/Announcements";
 import SubjectTeacherDashboard from "./pages/SubjectTeacherDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import NotFound from "./pages/NotFound";
@@ -53,7 +62,19 @@ const App = () => (
             <Route path="fees" element={<Fees />} />
           </Route>
 
-          <Route path="/class-teacher" element={<ClassTeacherDashboard />} />
+          {/* Class Teacher Routes with Layout */}
+          <Route path="/class-teacher" element={<ClassTeacherLayout />}>
+            <Route index element={<ClassTeacherDashboard />} />
+            <Route path="students" element={<StudentList />} />
+            <Route path="students/:id" element={<StudentProfile />} />
+            <Route path="mark-attendance" element={<MarkAttendance />} />
+            <Route path="attendance-history" element={<AttendanceHistory />} />
+            <Route path="leave-requests" element={<LeaveRequests />} />
+            <Route path="fee-status" element={<FeeStatus />} />
+            <Route path="overview" element={<ClassOverview />} />
+            <Route path="announcements" element={<ClassAnnouncements />} />
+          </Route>
+
           <Route path="/subject-teacher" element={<SubjectTeacherDashboard />} />
           <Route path="/student" element={<StudentDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
