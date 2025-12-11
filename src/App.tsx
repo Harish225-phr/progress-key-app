@@ -29,7 +29,15 @@ import LeaveRequests from "./pages/class-teacher/LeaveRequests";
 import FeeStatus from "./pages/class-teacher/FeeStatus";
 import ClassOverview from "./pages/class-teacher/ClassOverview";
 import ClassAnnouncements from "./pages/class-teacher/Announcements";
-import SubjectTeacherDashboard from "./pages/SubjectTeacherDashboard";
+import SubjectTeacherLayout from "./components/SubjectTeacherLayout";
+import SubjectTeacherDashboard from "./pages/subject-teacher/Dashboard";
+import SubjectMaterials from "./pages/subject-teacher/Materials";
+import SubjectHomework from "./pages/subject-teacher/Homework";
+import SubjectTests from "./pages/subject-teacher/Tests";
+import SubjectMarks from "./pages/subject-teacher/Marks";
+import SubjectBehaviour from "./pages/subject-teacher/Behaviour";
+import SubjectDailyTopics from "./pages/subject-teacher/DailyTopics";
+import SubjectPerformance from "./pages/subject-teacher/Performance";
 import StudentDashboard from "./pages/StudentDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -75,7 +83,18 @@ const App = () => (
             <Route path="announcements" element={<ClassAnnouncements />} />
           </Route>
 
-          <Route path="/subject-teacher" element={<SubjectTeacherDashboard />} />
+          {/* Subject Teacher Routes with Layout */}
+          <Route path="/subject-teacher" element={<SubjectTeacherLayout />}>
+            <Route index element={<SubjectTeacherDashboard />} />
+            <Route path="materials" element={<SubjectMaterials />} />
+            <Route path="homework" element={<SubjectHomework />} />
+            <Route path="tests" element={<SubjectTests />} />
+            <Route path="marks" element={<SubjectMarks />} />
+            <Route path="behaviour" element={<SubjectBehaviour />} />
+            <Route path="daily-topics" element={<SubjectDailyTopics />} />
+            <Route path="performance" element={<SubjectPerformance />} />
+          </Route>
+
           <Route path="/student" element={<StudentDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
