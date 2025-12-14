@@ -38,7 +38,17 @@ import SubjectMarks from "./pages/subject-teacher/Marks";
 import SubjectBehaviour from "./pages/subject-teacher/Behaviour";
 import SubjectDailyTopics from "./pages/subject-teacher/DailyTopics";
 import SubjectPerformance from "./pages/subject-teacher/Performance";
-import StudentDashboard from "./pages/StudentDashboard";
+import StudentParentLayout from "./components/StudentParentLayout";
+import StudentDashboard from "./pages/student/Dashboard";
+import StudentAttendance from "./pages/student/Attendance";
+import StudentHomework from "./pages/student/Homework";
+import StudentMaterials from "./pages/student/Materials";
+import StudentTests from "./pages/student/Tests";
+import StudentBehaviour from "./pages/student/Behaviour";
+import StudentDailyTopics from "./pages/student/DailyTopics";
+import StudentAnnouncements from "./pages/student/Announcements";
+import StudentLeaveRequest from "./pages/student/LeaveRequest";
+import StudentFees from "./pages/student/Fees";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,7 +63,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           
-          {/* Super Admin Routes with Layout */}
+          {/* Super Admin Routes */}
           <Route path="/admin" element={<SuperAdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="students" element={<Students />} />
@@ -70,7 +80,7 @@ const App = () => (
             <Route path="fees" element={<Fees />} />
           </Route>
 
-          {/* Class Teacher Routes with Layout */}
+          {/* Class Teacher Routes */}
           <Route path="/class-teacher" element={<ClassTeacherLayout />}>
             <Route index element={<ClassTeacherDashboard />} />
             <Route path="students" element={<StudentList />} />
@@ -83,7 +93,7 @@ const App = () => (
             <Route path="announcements" element={<ClassAnnouncements />} />
           </Route>
 
-          {/* Subject Teacher Routes with Layout */}
+          {/* Subject Teacher Routes */}
           <Route path="/subject-teacher" element={<SubjectTeacherLayout />}>
             <Route index element={<SubjectTeacherDashboard />} />
             <Route path="materials" element={<SubjectMaterials />} />
@@ -95,8 +105,20 @@ const App = () => (
             <Route path="performance" element={<SubjectPerformance />} />
           </Route>
 
-          <Route path="/student" element={<StudentDashboard />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          {/* Student/Parent Routes */}
+          <Route path="/student" element={<StudentParentLayout />}>
+            <Route index element={<StudentDashboard />} />
+            <Route path="attendance" element={<StudentAttendance />} />
+            <Route path="homework" element={<StudentHomework />} />
+            <Route path="materials" element={<StudentMaterials />} />
+            <Route path="tests" element={<StudentTests />} />
+            <Route path="behaviour" element={<StudentBehaviour />} />
+            <Route path="daily-topics" element={<StudentDailyTopics />} />
+            <Route path="announcements" element={<StudentAnnouncements />} />
+            <Route path="leave-request" element={<StudentLeaveRequest />} />
+            <Route path="fees" element={<StudentFees />} />
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
