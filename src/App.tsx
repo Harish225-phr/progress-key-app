@@ -49,6 +49,7 @@ import StudentDailyTopics from "./pages/student/DailyTopics";
 import StudentAnnouncements from "./pages/student/Announcements";
 import StudentLeaveRequest from "./pages/student/LeaveRequest";
 import StudentFees from "./pages/student/Fees";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -119,6 +120,7 @@ const App = () => (
             <Route path="fees" element={<StudentFees />} />
           </Route>
 
+          <Route path="/install" element={<Install />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
