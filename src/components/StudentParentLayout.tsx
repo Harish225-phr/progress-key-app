@@ -163,9 +163,9 @@ const StudentParentLayout = () => {
             <p className="text-xs text-muted-foreground">Student/Parent Account</p>
           </div>
 
-          {/* Install Button for Desktop */}
-          {showInstallButton && (
-            <div className="p-4 border-b border-border">
+          {/* Install App Section */}
+          <div className="p-4 border-b border-border">
+            {showInstallButton ? (
               <Button
                 variant="outline"
                 className="w-full"
@@ -174,8 +174,17 @@ const StudentParentLayout = () => {
                 <Download className="h-4 w-4 mr-2" />
                 Install App
               </Button>
-            </div>
-          )}
+            ) : (
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground"
+                onClick={() => navigate("/install")}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Installation Guide
+              </Button>
+            )}
+          </div>
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-2">
