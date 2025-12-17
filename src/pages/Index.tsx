@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { GraduationCap, Users, BookOpen, ClipboardList } from "lucide-react";
+import { GraduationCap, Users, BookOpen, ClipboardList, Download } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -125,9 +125,15 @@ const Index = () => {
         {/* CTA */}
         <div className="text-center mt-16">
           <p className="text-muted-foreground mb-4">Ready to get started?</p>
-          <Button size="lg" onClick={() => navigate("/login")} variant="outline" className="text-lg px-8 py-6">
-            Login Now
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button size="lg" onClick={() => navigate("/login")} variant="outline" className="text-lg px-8 py-6">
+              Login Now
+            </Button>
+            <Button size="lg" onClick={() => navigate("/install")} variant="ghost" className="text-lg px-8 py-6">
+              <Download className="h-5 w-5 mr-2" />
+              Install App
+            </Button>
+          </div>
         </div>
       </div>
     </div>
