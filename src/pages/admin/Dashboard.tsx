@@ -12,6 +12,7 @@ import {
   DollarSign,
   ArrowRight,
 } from "lucide-react";
+import InstallBanner from "@/components/InstallBanner";
 
 const stats = [
   { title: "Total Students", value: "165", icon: Users, link: "/admin/students", color: "text-blue-600" },
@@ -34,6 +35,9 @@ const recentActivities = [
 export default function Dashboard() {
   return (
     <div className="p-6 space-y-6">
+      {/* Install Banner */}
+      <InstallBanner storageKey="admin_install_banner_dismissed" />
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Super Admin Dashboard</h1>

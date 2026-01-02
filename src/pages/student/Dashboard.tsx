@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +16,6 @@ import {
   TrendingUp,
   AlertCircle,
   Send,
-  Download,
-  X,
 } from "lucide-react";
 import {
   LineChart,
@@ -28,6 +25,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import InstallBanner from "@/components/InstallBanner";
 
 // Dummy data
 const attendanceData = [
@@ -68,60 +66,13 @@ const announcements = [
   { id: 2, title: "Class Photo Session", date: "Dec 18, 2024", isSchoolWide: false },
 ];
 
-const INSTALL_BANNER_KEY = "student_dashboard_install_banner_dismissed";
-
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const [showInstallBanner, setShowInstallBanner] = useState(false);
-
-  useEffect(() => {
-    const dismissed = localStorage.getItem(INSTALL_BANNER_KEY);
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
-    
-    if (!dismissed && !isStandalone) {
-      setShowInstallBanner(true);
-    }
-  }, []);
-
-  const dismissBanner = () => {
-    localStorage.setItem(INSTALL_BANNER_KEY, "true");
-    setShowInstallBanner(false);
-  };
 
   return (
     <div className="space-y-6 pb-20 lg:pb-6">
-      {/* Install App Banner */}
-      {showInstallBanner && (
-        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl p-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-              <Download className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-medium">Install Progress Key</p>
-              <p className="text-sm text-primary-foreground/80">Get quick access from your home screen</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => navigate("/install")}
-              className="whitespace-nowrap"
-            >
-              Install Now
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={dismissBanner}
-              className="text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Install Banner */}
+      <InstallBanner storageKey="student_dashboard_install_banner_dismissed" />
 
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-2xl p-6">
