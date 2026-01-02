@@ -8,6 +8,7 @@ import {
   DollarSign,
   Calendar,
 } from "lucide-react";
+import InstallBanner from "@/components/InstallBanner";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -21,6 +22,8 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Install Banner */}
+      <InstallBanner storageKey="class_teacher_install_banner_dismissed" />
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="hover:shadow-lg transition-shadow">

@@ -10,6 +10,7 @@ import {
   PenLine,
   BarChart3,
 } from "lucide-react";
+import InstallBanner from "@/components/InstallBanner";
 
 const stats = {
   totalHomework: 12,
@@ -21,6 +22,9 @@ const stats = {
 export default function SubjectTeacherDashboardPage() {
   return (
     <div className="space-y-6">
+      {/* Install Banner */}
+      <InstallBanner storageKey="subject_teacher_install_banner_dismissed" />
+
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">Welcome back! Here's an overview of your teaching activities.</p>
