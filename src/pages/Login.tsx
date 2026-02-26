@@ -16,6 +16,7 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    console.log("Login attempt with:", { email, password: "***" });
 
     try {
       const response = await fetch("https://sms-backend-d19v.onrender.com/api/auth/login", {
