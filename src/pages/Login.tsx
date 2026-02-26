@@ -13,51 +13,59 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Hardcoded credentials - NO API calls
-    const hardcodedUsers = [
-      { email: "superadmin@gmail.com", password: "abc123", role: "SUPER_ADMIN", full_name: "Super Admin" },
-      { email: "classteacher@gmail.com", password: "abc123", role: "CLASS_TEACHER", full_name: "Class Teacher" },
-      { email: "subjectteacher@gmail.com", password: "abc123", role: "SUBJECT_TEACHER", full_name: "Subject Teacher" },
-      { email: "parentchild@gmail.com", password: "abc123", role: "STUDENT_PARENT", full_name: "Parent/Student" },
-    ];
+    try {
+      const response = await fetch("https://sms-backend-d19v.onrender.com/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Accept": "*/*",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // Find matching user
-    const user = hardcodedUsers.find(u => u.email === email && u.password === password);
+      const data = await response.json();
 
-    if (!user) {
-      toast.error("Invalid email or password");
+      if (!response.ok) {
+        toast.error(data.message || "Invalid email or password");
+        setLoading(false);
+        return;
+      }
+
+      // Store user data and token in session storage
+      sessionStorage.setItem("user", JSON.stringify(data.user || data));
+      if (data.token) {
+        sessionStorage.setItem("token", data.token);
+      }
+
+      toast.success("Login successful!");
+
+      // Route based on role
+      const role = data.user?.role || data.role;
+      switch (role) {
+        case "SUPER_ADMIN":
+          navigate("/admin");
+          break;
+        case "CLASS_TEACHER":
+          navigate("/class-teacher");
+          break;
+        case "SUBJECT_TEACHER":
+          navigate("/subject-teacher");
+          break;
+        case "STUDENT_PARENT":
+          navigate("/student");
+          break;
+        default:
+          navigate("/");
+      }
+    } catch (error) {
+      toast.error("Network error. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // Store user data in session storage for role-based routing
-    sessionStorage.setItem("user", JSON.stringify(user));
-
-    toast.success("Login successful!");
-
-    // Route based on role
-    switch (user.role) {
-      case "SUPER_ADMIN":
-        navigate("/admin");
-        break;
-      case "CLASS_TEACHER":
-        navigate("/class-teacher");
-        break;
-      case "SUBJECT_TEACHER":
-        navigate("/subject-teacher");
-        break;
-      case "STUDENT_PARENT":
-        navigate("/student");
-        break;
-      default:
-        navigate("/");
-    }
-
-    setLoading(false);
   };
 
   return (
@@ -105,15 +113,6 @@ const Login = () => {
             </Button>
           </form>
 
-          <div className="mt-8 p-4 bg-muted rounded-lg space-y-2 text-sm">
-            <p className="font-semibold text-foreground">Demo Credentials:</p>
-            <div className="space-y-1 text-muted-foreground">
-              <p>🔹 Super Admin: superadmin@gmail.com / abc123</p>
-              <p>🔹 Class Teacher: classteacher@gmail.com / abc123</p>
-              <p>🔹 Subject Teacher: subjectteacher@gmail.com / abc123</p>
-              <p>🔹 Parent/Student: parentchild@gmail.com / abc123</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
