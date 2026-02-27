@@ -47,7 +47,7 @@ const Login = () => {
       // Route based on role
       const role = data.user?.role || data.role;
       switch (role) {
-        case "SUPER_ADMIN":
+        case "school_admin":
           navigate("/admin");
           break;
         case "CLASS_TEACHER":

@@ -3,7 +3,7 @@ CREATE POLICY "Teachers can read own mappings" ON public.teacher_subject_mapping
   EXISTS (SELECT 1 FROM public.teachers WHERE id = teacher_id AND user_id = auth.uid())
 );
 CREATE POLICY "Super admins can manage mappings" ON public.teacher_subject_mappings FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'school_admin')
 );
 
 -- RLS for tests
@@ -26,7 +26,7 @@ CREATE POLICY "Subject teachers can manage tests" ON public.tests FOR ALL USING 
   )
 );
 CREATE POLICY "Super admins can read all tests" ON public.tests FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'school_admin')
 );
 
 -- RLS for marks
@@ -117,7 +117,7 @@ CREATE POLICY "Class teachers can manage fees" ON public.fees FOR ALL USING (
   )
 );
 CREATE POLICY "Super admins can read all fees" ON public.fees FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'school_admin')
 );
 
 -- RLS for leave_requests

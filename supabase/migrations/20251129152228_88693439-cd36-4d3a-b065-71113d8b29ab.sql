@@ -1,5 +1,5 @@
 -- Create enum types
-CREATE TYPE user_role AS ENUM ('SUPER_ADMIN', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'STUDENT_PARENT');
+CREATE TYPE user_role AS ENUM ('school_admin', 'CLASS_TEACHER', 'SUBJECT_TEACHER', 'STUDENT_PARENT');
 CREATE TYPE leave_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 CREATE TYPE fee_status AS ENUM ('PENDING', 'PAID');
 
@@ -220,23 +220,23 @@ ALTER TABLE public.leave_requests ENABLE ROW LEVEL SECURITY;
 -- RLS Policies for users table (everyone can read their own data)
 CREATE POLICY "Users can read own data" ON public.users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Super admins can read all users" ON public.users FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'school_admin')
 );
 
 -- RLS for classes, sections, subjects (readable by authenticated users)
 CREATE POLICY "Authenticated users can read classes" ON public.classes FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Super admins can manage classes" ON public.classes FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'school_admin')
 );
 
 CREATE POLICY "Authenticated users can read sections" ON public.sections FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Super admins can manage sections" ON public.sections FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'school_admin')
 );
 
 CREATE POLICY "Authenticated users can read subjects" ON public.subjects FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Super admins can manage subjects" ON public.subjects FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'school_admin')
 );
 
 -- RLS for students
@@ -252,14 +252,14 @@ CREATE POLICY "Teachers can read students in their class" ON public.students FOR
   )
 );
 CREATE POLICY "Super admins can read all students" ON public.students FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'school_admin')
 );
 
 -- RLS for teachers
 CREATE POLICY "Teachers can read own data" ON public.teachers FOR SELECT USING (user_id = auth.uid());
 CREATE POLICY "All authenticated can read teachers" ON public.teachers FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Super admins can manage teachers" ON public.teachers FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'school_admin')
 );
 
 -- RLS for attendance
@@ -317,7 +317,7 @@ CREATE POLICY "Subject teachers can manage materials" ON public.materials FOR AL
 -- RLS for announcements
 CREATE POLICY "All authenticated can read announcements" ON public.announcements FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Super admin can create school-wide announcements" ON public.announcements FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'SUPER_ADMIN')
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'school_admin')
 );
 CREATE POLICY "Class teachers can create class announcements" ON public.announcements FOR INSERT WITH CHECK (
   EXISTS (
@@ -330,7 +330,7 @@ CREATE POLICY "Class teachers can create class announcements" ON public.announce
 
 -- Insert hardcoded users (Note: In production, passwords should be properly hashed)
 INSERT INTO public.users (email, password_hash, role, full_name) VALUES
-  ('superadmin@gmail.com', 'abc123', 'SUPER_ADMIN', 'Principal Admin'),
+  ('superadmin@gmail.com', 'abc123', 'school_admin', 'Principal Admin'),
   ('classteacher@gmail.com', 'abc123', 'CLASS_TEACHER', 'Class Teacher'),
   ('subjectteacher@gmail.com', 'abc123', 'SUBJECT_TEACHER', 'Subject Teacher'),
   ('parentchild@gmail.com', 'abc123', 'STUDENT_PARENT', 'Parent Student');

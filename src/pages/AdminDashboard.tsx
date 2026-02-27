@@ -31,7 +31,7 @@ const AdminDashboard = () => {
       return;
     }
     const parsedUser = JSON.parse(userData);
-    if (parsedUser.role !== "SUPER_ADMIN") {
+    if (parsedUser.role !== "school_admin") {
       navigate("/login");
       return;
     }
