@@ -40,6 +40,7 @@ const ClassTeacherLayout = () => {
 
   const handleLogout = () => {
     sessionStorage.removeItem("user");
+    sessionStorage.removeItem("token");
     toast.success("Logged out successfully");
     navigate("/login");
   };

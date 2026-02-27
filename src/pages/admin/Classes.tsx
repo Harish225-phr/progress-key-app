@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,14 +20,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit } from "lucide-react";
+import { Plus, Edit, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-
-const mockClasses = [
-  { id: 1, name: "Class 9", description: "Grade 9", sections: 2, students: 60, status: true },
-  { id: 2, name: "Class 10", description: "Grade 10", sections: 2, students: 55, status: true },
-  { id: 3, name: "Class 11", description: "Grade 11", sections: 2, students: 50, status: true },
-];
+import { useClasses } from "@/hooks/useClasses";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const mockSections = [
   { id: 1, className: "Class 9", name: "Section A", students: 30, status: true },
@@ -37,14 +33,70 @@ const mockSections = [
 ];
 
 export default function Classes() {
-  const [classes, setClasses] = useState(mockClasses);
+  const { classes, loading, error, addClass, deleteClass, fetchClasses, clearError } = useClasses();
   const [sections, setSections] = useState(mockSections);
   const [classDialogOpen, setClassDialogOpen] = useState(false);
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
+  const [className, setClassName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddClass = () => {
-    toast.success("Class added successfully!");
-    setClassDialogOpen(false);
+  // Fetch classes on component mount
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
+
+  // Validate class name
+  const validateClassName = (name: string): boolean => {
+    if (!name.trim()) {
+      toast.error("Class name is required");
+      return false;
+    }
+    if (name.trim().length < 2) {
+      toast.error("Class name must be at least 2 characters");
+      return false;
+    }
+    if (name.trim().length > 50) {
+      toast.error("Class name must be less than 50 characters");
+      return false;
+    }
+    return true;
+  };
+
+  // Handle add class
+  const handleAddClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateClassName(className)) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const result = await addClass({ name: className.trim() });
+
+      if (result) {
+        toast.success("Class added successfully!");
+        setClassName("");
+        setClassDialogOpen(false);
+      }
+    } catch (err) {
+      console.error("Error adding class:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle delete class
+  const handleDeleteClass = async (classId: string) => {
+    if (window.confirm("Are you sure you want to delete this class?")) {
+      const result = await deleteClass(classId);
+      if (result) {
+        toast.success("Class deleted successfully!");
+      } else {
+        toast.error("Failed to delete class");
+      }
+    }
   };
 
   const handleAddSection = () => {
@@ -59,11 +111,27 @@ export default function Classes() {
         <p className="text-muted-foreground">Manage classes and sections</p>
       </div>
 
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex justify-between items-center">
+            <span>{error}</span>
+            <button
+              onClick={clearError}
+              className="text-sm underline hover:no-underline ml-4"
+            >
+              Dismiss
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="grid gap-6">
         {/* Classes */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Classes</CardTitle>
+            <CardTitle>Classes ({classes.length})</CardTitle>
             <Dialog open={classDialogOpen} onOpenChange={setClassDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -75,58 +143,88 @@ export default function Classes() {
                 <DialogHeader>
                   <DialogTitle>Add New Class</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
+                <form onSubmit={handleAddClass} className="space-y-4">
                   <div>
-                    <Label htmlFor="className">Class Name</Label>
-                    <Input id="className" placeholder="e.g., Class 12" />
+                    <Label htmlFor="className">Class Name *</Label>
+                    <Input
+                      id="className"
+                      placeholder="e.g., Class 10"
+                      value={className}
+                      onChange={(e) => setClassName(e.target.value)}
+                      disabled={isSubmitting}
+                      maxLength={50}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {className.length}/50 characters
+                    </p>
                   </div>
-                  <div>
-                    <Label htmlFor="classDesc">Description</Label>
-                    <Input id="classDesc" placeholder="e.g., Grade 12" />
-                  </div>
-                  <Button onClick={handleAddClass} className="w-full">
-                    Add Class
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting || !className.trim()}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      "Add Class"
+                    )}
                   </Button>
-                </div>
+                </form>
               </DialogContent>
             </Dialog>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Class Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Sections</TableHead>
-                  <TableHead>Students</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {classes.map((cls) => (
-                  <TableRow key={cls.id}>
-                    <TableCell className="font-medium">{cls.name}</TableCell>
-                    <TableCell>{cls.description}</TableCell>
-                    <TableCell>{cls.sections}</TableCell>
-                    <TableCell>{cls.students}</TableCell>
-                    <TableCell>
-                      <Badge variant={cls.status ? "default" : "secondary"}>
-                        {cls.status ? "Active" : "Disabled"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Switch checked={cls.status} />
-                      </div>
-                    </TableCell>
+            {loading && classes.length === 0 ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : classes.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No classes found. Add one to get started.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Class Name</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {classes.map((cls) => (
+                    <TableRow key={cls.id}>
+                      <TableCell className="font-medium">{cls.name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {cls.createdAt
+                          ? new Date(cls.createdAt).toLocaleDateString()
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="default">Active</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClass(cls.id)}
+                            title="Delete class"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
 

@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import SuperAdminLayout from "./components/SuperAdminLayout";
@@ -65,7 +66,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           
           {/* Super Admin Routes */}
-          <Route path="/admin" element={<SuperAdminLayout />}>
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={["school_admin"]}><SuperAdminLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="students" element={<Students />} />
             <Route path="classes" element={<Classes />} />
@@ -82,7 +83,7 @@ const App = () => (
           </Route>
 
           {/* Class Teacher Routes */}
-          <Route path="/class-teacher" element={<ClassTeacherLayout />}>
+          <Route path="/class-teacher" element={<ProtectedRoute allowedRoles={["CLASS_TEACHER"]}><ClassTeacherLayout /></ProtectedRoute>}>
             <Route index element={<ClassTeacherDashboard />} />
             <Route path="students" element={<StudentList />} />
             <Route path="students/:id" element={<StudentProfile />} />
@@ -95,7 +96,7 @@ const App = () => (
           </Route>
 
           {/* Subject Teacher Routes */}
-          <Route path="/subject-teacher" element={<SubjectTeacherLayout />}>
+          <Route path="/subject-teacher" element={<ProtectedRoute allowedRoles={["SUBJECT_TEACHER"]}><SubjectTeacherLayout /></ProtectedRoute>}>
             <Route index element={<SubjectTeacherDashboard />} />
             <Route path="materials" element={<SubjectMaterials />} />
             <Route path="homework" element={<SubjectHomework />} />
@@ -107,7 +108,7 @@ const App = () => (
           </Route>
 
           {/* Student/Parent Routes */}
-          <Route path="/student" element={<StudentParentLayout />}>
+          <Route path="/student" element={<ProtectedRoute allowedRoles={["STUDENT_PARENT"]}><StudentParentLayout /></ProtectedRoute>}>
             <Route index element={<StudentDashboard />} />
             <Route path="attendance" element={<StudentAttendance />} />
             <Route path="homework" element={<StudentHomework />} />

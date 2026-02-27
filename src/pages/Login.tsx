@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,39 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Check if already logged in
+  useEffect(() => {
+    const user = sessionStorage.getItem("user");
+    const token = sessionStorage.getItem("token");
+    
+    if (user && token) {
+      try {
+        const userData = JSON.parse(user);
+        const role = userData.role;
+        
+        // Redirect to appropriate dashboard based on role
+        switch (role) {
+          case "school_admin":
+            navigate("/admin", { replace: true });
+            break;
+          case "CLASS_TEACHER":
+            navigate("/class-teacher", { replace: true });
+            break;
+          case "SUBJECT_TEACHER":
+            navigate("/subject-teacher", { replace: true });
+            break;
+          case "STUDENT_PARENT":
+            navigate("/student", { replace: true });
+            break;
+          default:
+            navigate("/", { replace: true });
+        }
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,24 +61,27 @@ const Login = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const response_data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.message || "Invalid email or password");
+        toast.error(response_data.message || "Invalid email or password");
         setLoading(false);
         return;
       }
 
+      // Extract token and user from the nested data structure
+      const { token, user } = response_data.data;
+
       // Store user data and token in session storage
-      sessionStorage.setItem("user", JSON.stringify(data.user || data));
-      if (data.token) {
-        sessionStorage.setItem("token", data.token);
+      sessionStorage.setItem("user", JSON.stringify(user));
+      if (token) {
+        sessionStorage.setItem("token", token);
       }
 
       toast.success("Login successful!");
 
       // Route based on role
-      const role = data.user?.role || data.role;
+      const role = user?.role;
       switch (role) {
         case "school_admin":
           navigate("/admin");

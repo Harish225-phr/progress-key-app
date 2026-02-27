@@ -91,6 +91,7 @@ const StudentParentLayout = () => {
 
   const handleLogout = () => {
     sessionStorage.removeItem("user");
+    sessionStorage.removeItem("token");
     toast.success("Logged out successfully");
     navigate("/login");
   };
