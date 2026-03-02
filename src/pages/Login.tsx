@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { GraduationCap } from "lucide-react";
+import { login } from "@/services/authService";
+import { getErrorMessage } from "@/api/errors";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -49,28 +51,12 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    console.log("Login attempt with:", { email, password: "***" });
 
     try {
-      const response = await fetch("https://sms-backend-d19v.onrender.com/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Accept": "*/*",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const response_data = await response.json();
-
-      if (!response.ok) {
-        toast.error(response_data.message || "Invalid email or password");
-        setLoading(false);
-        return;
-      }
+      const responseData = await login({ email, password });
 
       // Extract token and user from the nested data structure
-      const { token, user } = response_data.data;
+      const { token, user } = responseData;
 
       // Store user data and token in session storage
       sessionStorage.setItem("user", JSON.stringify(user));
@@ -99,7 +85,7 @@ const Login = () => {
           navigate("/");
       }
     } catch (error) {
-      toast.error("Network error. Please try again.");
+      toast.error(getErrorMessage(error, "Network error. Please try again."));
     } finally {
       setLoading(false);
     }
