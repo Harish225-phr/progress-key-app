@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { useClasses } from "@/hooks/useClasses";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { addSection } from "@/services/classService";
+import { userService, type User } from "@/services/userService";
 
 type SectionRow = {
   id: string;
@@ -55,6 +56,8 @@ export default function Classes() {
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
   const [className, setClassName] = useState("");
   const [selectedSectionClassId, setSelectedSectionClassId] = useState("");
+  const [teachers, setTeachers] = useState<User[]>([]);
+  const [teachersLoading, setTeachersLoading] = useState(false);
   const [sectionName, setSectionName] = useState("");
   const [sectionClassTeacher, setSectionClassTeacher] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,6 +67,30 @@ export default function Classes() {
   useEffect(() => {
     fetchClasses();
   }, [fetchClasses]);
+
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      if (!sectionDialogOpen) {
+        return;
+      }
+
+      setTeachersLoading(true);
+      try {
+        const users = await userService.getAll();
+        const teacherUsers = users.filter((user) => {
+          const normalizedRole = String(user.role ?? "").toUpperCase();
+          return normalizedRole.includes("TEACHER");
+        });
+        setTeachers(teacherUsers);
+      } catch {
+        toast.error("Failed to fetch teachers");
+      } finally {
+        setTeachersLoading(false);
+      }
+    };
+
+    fetchTeachers();
+  }, [sectionDialogOpen]);
 
   // Validate class name
   const validateClassName = (name: string): boolean => {
@@ -346,14 +373,30 @@ export default function Classes() {
                   </div>
                   <div>
                     <Label htmlFor="classTeacher">Class Teacher *</Label>
-                    <Input
-                      id="classTeacher"
-                      placeholder="e.g., Mr. Sharma"
+                    <Select
                       value={sectionClassTeacher}
-                      onChange={(e) => setSectionClassTeacher(e.target.value)}
-                      disabled={isSectionSubmitting}
-                      required
-                    />
+                      onValueChange={setSectionClassTeacher}
+                      disabled={isSectionSubmitting || teachersLoading || teachers.length === 0}
+                    >
+                      <SelectTrigger id="classTeacher">
+                        <SelectValue
+                          placeholder={
+                            teachersLoading
+                              ? "Loading teachers..."
+                              : teachers.length === 0
+                                ? "No teachers available"
+                                : "Select class teacher"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teachers.map((teacher) => (
+                          <SelectItem key={String(teacher.id)} value={String(teacher.name)}>
+                            {teacher.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Button
                     type="submit"
@@ -361,6 +404,7 @@ export default function Classes() {
                     disabled={
                       isSectionSubmitting ||
                       classes.length === 0 ||
+                      teachers.length === 0 ||
                       !selectedSectionClassId ||
                       !sectionName.trim() ||
                       !sectionClassTeacher.trim()
