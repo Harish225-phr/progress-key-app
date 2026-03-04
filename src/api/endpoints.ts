@@ -13,4 +13,8 @@ export const API_ENDPOINTS = {
     base: "/sections",
     byId: (sectionId: string) => `/sections/${sectionId}`,
   },
+  users: {
+    base: "/users",
+    byId: (userId: string) => `/users/${userId}`,
+  },
 } as const;

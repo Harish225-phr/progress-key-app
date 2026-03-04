@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+  { icon: Users, label: "User Management", path: "/admin/users" },
   { icon: Users, label: "Students", path: "/admin/students" },
   { icon: BookOpen, label: "Classes & Sections", path: "/admin/classes" },
   { icon: GraduationCap, label: "Subjects", path: "/admin/subjects" },

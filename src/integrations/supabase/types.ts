@@ -926,7 +926,7 @@ export type Database = {
       fee_status: "PENDING" | "PAID"
       leave_status: "PENDING" | "APPROVED" | "REJECTED"
       user_role:
-        | "school_admin"
+        | "SUPER_ADMIN"
         | "CLASS_TEACHER"
         | "SUBJECT_TEACHER"
         | "STUDENT_PARENT"
@@ -1060,7 +1060,7 @@ export const Constants = {
       fee_status: ["PENDING", "PAID"],
       leave_status: ["PENDING", "APPROVED", "REJECTED"],
       user_role: [
-        "school_admin",
+        "SUPER_ADMIN",
         "CLASS_TEACHER",
         "SUBJECT_TEACHER",
         "STUDENT_PARENT",
