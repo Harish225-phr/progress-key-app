@@ -5,6 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -24,21 +31,34 @@ import { Plus, Edit, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useClasses } from "@/hooks/useClasses";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { addSection } from "@/services/classService";
 
-const mockSections = [
-  { id: 1, className: "Class 9", name: "Section A", students: 30, status: true },
-  { id: 2, className: "Class 9", name: "Section B", students: 30, status: true },
-  { id: 3, className: "Class 10", name: "Section A", students: 28, status: true },
-  { id: 4, className: "Class 10", name: "Section B", students: 27, status: true },
+type SectionRow = {
+  id: string;
+  className: string;
+  name: string;
+  students: number;
+  status: boolean;
+};
+
+const mockSections: SectionRow[] = [
+  { id: "1", className: "Class 9", name: "Section A", students: 30, status: true },
+  { id: "2", className: "Class 9", name: "Section B", students: 30, status: true },
+  { id: "3", className: "Class 10", name: "Section A", students: 28, status: true },
+  { id: "4", className: "Class 10", name: "Section B", students: 27, status: true },
 ];
 
 export default function Classes() {
   const { classes, loading, error, addClass, deleteClass, fetchClasses, clearError } = useClasses();
-  const [sections, setSections] = useState(mockSections);
+  const [sections, setSections] = useState<SectionRow[]>(mockSections);
   const [classDialogOpen, setClassDialogOpen] = useState(false);
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
   const [className, setClassName] = useState("");
+  const [selectedSectionClassId, setSelectedSectionClassId] = useState("");
+  const [sectionName, setSectionName] = useState("");
+  const [sectionClassTeacher, setSectionClassTeacher] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSectionSubmitting, setIsSectionSubmitting] = useState(false);
 
   // Fetch classes on component mount
   useEffect(() => {
@@ -99,9 +119,57 @@ export default function Classes() {
     }
   };
 
-  const handleAddSection = () => {
-    toast.success("Section added successfully!");
-    setSectionDialogOpen(false);
+  const handleAddSection = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedSectionClassId) {
+      toast.error("Please select a class");
+      return;
+    }
+
+    if (!sectionName.trim()) {
+      toast.error("Section name is required");
+      return;
+    }
+
+    if (!sectionClassTeacher.trim()) {
+      toast.error("Class teacher is required");
+      return;
+    }
+
+    setIsSectionSubmitting(true);
+
+    try {
+      const createdSection = await addSection({
+        name: sectionName.trim(),
+        classId: selectedSectionClassId,
+        classTeacher: sectionClassTeacher.trim(),
+      });
+
+      const selectedClass = classes.find((cls) => String(cls.id) === selectedSectionClassId);
+
+      setSections((prevSections) => [
+        ...prevSections,
+        {
+          id: createdSection.id,
+          className: selectedClass?.name ?? "-",
+          name: createdSection.name,
+          students: 0,
+          status: true,
+        },
+      ]);
+
+      toast.success("Section added successfully!");
+      setSectionName("");
+      setSectionClassTeacher("");
+      setSelectedSectionClassId("");
+      setSectionDialogOpen(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to add section";
+      toast.error(errorMessage);
+    } finally {
+      setIsSectionSubmitting(false);
+    }
   };
 
   return (
@@ -243,19 +311,71 @@ export default function Classes() {
                 <DialogHeader>
                   <DialogTitle>Add New Section</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
+                <form onSubmit={handleAddSection} className="space-y-4">
                   <div>
-                    <Label htmlFor="sectionClass">Select Class</Label>
-                    <Input id="sectionClass" placeholder="Class 9" />
+                    <Label htmlFor="sectionClass">Select Class *</Label>
+                    <Select
+                      value={selectedSectionClassId}
+                      onValueChange={setSelectedSectionClassId}
+                      disabled={isSectionSubmitting || classes.length === 0}
+                    >
+                      <SelectTrigger id="sectionClass">
+                        <SelectValue
+                          placeholder={classes.length === 0 ? "No classes available" : "Select class"}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {classes.map((cls) => (
+                          <SelectItem key={String(cls.id)} value={String(cls.id)}>
+                            {cls.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
-                    <Label htmlFor="sectionName">Section Name</Label>
-                    <Input id="sectionName" placeholder="e.g., Section C" />
+                    <Label htmlFor="sectionName">Section Name *</Label>
+                    <Input
+                      id="sectionName"
+                      placeholder="e.g., Section C"
+                      value={sectionName}
+                      onChange={(e) => setSectionName(e.target.value)}
+                      disabled={isSectionSubmitting}
+                      required
+                    />
                   </div>
-                  <Button onClick={handleAddSection} className="w-full">
-                    Add Section
+                  <div>
+                    <Label htmlFor="classTeacher">Class Teacher *</Label>
+                    <Input
+                      id="classTeacher"
+                      placeholder="e.g., Mr. Sharma"
+                      value={sectionClassTeacher}
+                      onChange={(e) => setSectionClassTeacher(e.target.value)}
+                      disabled={isSectionSubmitting}
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={
+                      isSectionSubmitting ||
+                      classes.length === 0 ||
+                      !selectedSectionClassId ||
+                      !sectionName.trim() ||
+                      !sectionClassTeacher.trim()
+                    }
+                  >
+                    {isSectionSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      "Add Section"
+                    )}
                   </Button>
-                </div>
+                </form>
               </DialogContent>
             </Dialog>
           </CardHeader>
