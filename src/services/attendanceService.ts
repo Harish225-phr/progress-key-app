@@ -12,6 +12,19 @@ export interface AttendanceData {
   status: AttendanceStatus;
 }
 
+export interface BulkAttendanceRecord {
+  studentId: string;
+  status: AttendanceStatus;
+}
+
+export interface BulkAttendanceData {
+  date: string;
+  classId: string;
+  sectionId: string;
+  subjectId: string;
+  records: BulkAttendanceRecord[];
+}
+
 export interface Attendance {
   id: string;
   studentId: string;
@@ -135,5 +148,22 @@ export const attendanceService = {
 
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(API_ENDPOINTS.attendance.byId(id));
+  },
+
+  createBulk: async (data: BulkAttendanceData): Promise<Attendance[]> => {
+    const response = await apiClient.post<AttendanceListResponse>(
+      API_ENDPOINTS.attendance.bulk,
+      data
+    );
+    const attendanceArray = extractAttendanceArray(response);
+    return attendanceArray
+      .map((item) => {
+        try {
+          return normalizeAttendance(item);
+        } catch {
+          return null;
+        }
+      })
+      .filter((item): item is Attendance => item !== null);
   },
 };

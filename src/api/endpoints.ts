@@ -45,5 +45,6 @@ export const API_ENDPOINTS = {
   attendance: {
     base: "/attendance",
     byId: (id: string) => `/attendance/${id}`,
+    bulk: "/attendance/bulk",
   },
 } as const;
