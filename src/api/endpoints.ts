@@ -36,4 +36,9 @@ export const API_ENDPOINTS = {
     base: "/results/results",
     byId: (resultId: string) => `/results/results/${resultId}`,
   },
+  teacherAssignments: {
+    base: "/teacher-assignments",
+    byId: (id: string) => `/teacher-assignments/${id}`,
+    byTeacherId: (teacherId: string) => `/teacher-assignments/teacher/${teacherId}`,
+  },
 } as const;
