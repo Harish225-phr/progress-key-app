@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
   subjects: {
     base: "/subjects",
     byId: (subjectId: string) => `/subjects/${subjectId}`,
+    byClassId: (classId: string) => `/subjects/class/${classId}`,
   },
   exams: {
     base: "/results/exams",

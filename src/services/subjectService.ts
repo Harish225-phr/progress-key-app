@@ -91,6 +91,20 @@ export const subjectService = {
     return normalizeSubject(response);
   },
 
+  getByClassId: async (classId: string): Promise<Subject[]> => {
+    const response = await apiClient.get<SubjectsListResponse>(API_ENDPOINTS.subjects.byClassId(classId));
+    const subjectsArray = extractSubjectsArray(response);
+    return subjectsArray
+      .map((item) => {
+        try {
+          return normalizeSubject(item);
+        } catch {
+          return null;
+        }
+      })
+      .filter((item): item is Subject => item !== null);
+  },
+
   create: async (payload: SubjectData): Promise<Subject> => {
     const response = await apiClient.post<SubjectApiResponse>(API_ENDPOINTS.subjects.base, payload);
     return normalizeSubject(response);
