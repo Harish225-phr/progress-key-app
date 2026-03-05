@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -15,18 +16,163 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { CalendarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon, Plus, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { attendanceService, type Attendance, type AttendanceData, type AttendanceStatus } from "@/services/attendanceService";
+import { studentService, type Student } from "@/services/studentService";
+import { getClasses } from "@/services/classService";
+import { getSectionsByClassId, type SectionResponse } from "@/services/classService";
+import { subjectService, type Subject } from "@/services/subjectService";
 
-const mockAttendance = [
-  { id: 1, name: "John Smith", class: "10-A", date: "2024-01-15", status: "Present", percentage: "95%" },
-  { id: 2, name: "Sarah Johnson", class: "10-B", date: "2024-01-15", status: "Present", percentage: "92%" },
-  { id: 3, name: "Michael Brown", class: "9-A", date: "2024-01-15", status: "Absent", percentage: "88%" },
-  { id: 4, name: "Emily Davis", class: "9-B", date: "2024-01-15", status: "Present", percentage: "97%" },
-];
+export default function AttendancePage() {
+  const [attendanceRecords, setAttendanceRecords] = useState<Attendance[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [sections, setSections] = useState<SectionResponse[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<AttendanceData>({
+    studentId: "",
+    classId: "",
+    sectionId: "",
+    subjectId: "",
+    date: new Date().toISOString().split("T")[0],
+    status: "Present",
+  });
 
-export default function Attendance() {
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (formData.classId) {
+      fetchSections(formData.classId);
+    } else {
+      setSections([]);
+      setFormData(prev => ({ ...prev, sectionId: "" }));
+    }
+  }, [formData.classId]);
+
+  const fetchData = async () => {
+    try {
+      const [attendanceData, studentsData, classesData, subjectsData] = await Promise.all([
+        attendanceService.getAll(),
+        studentService.getAll(),
+        getClasses(),
+        subjectService.getAll(),
+      ]);
+      setAttendanceRecords(attendanceData);
+      setStudents(studentsData);
+      setClasses(classesData.map(c => ({ id: c.id, name: c.name })));
+      setSubjects(subjectsData);
+    } catch {
+      toast.error("Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSections = async (classId: string) => {
+    try {
+      const sectionsData = await getSectionsByClassId(classId);
+      setSections(sectionsData);
+    } catch {
+      toast.error("Failed to fetch sections");
+    }
+  };
+
+  const handleMarkAttendance = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.studentId) {
+      toast.error("Please select a student");
+      return;
+    }
+    if (!formData.classId) {
+      toast.error("Please select a class");
+      return;
+    }
+    if (!formData.sectionId) {
+      toast.error("Please select a section");
+      return;
+    }
+    if (!formData.subjectId) {
+      toast.error("Please select a subject");
+      return;
+    }
+    if (!formData.date) {
+      toast.error("Please select a date");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const newAttendance = await attendanceService.create(formData);
+      setAttendanceRecords(prev => [...prev, newAttendance]);
+      toast.success("Attendance marked successfully!");
+      setDialogOpen(false);
+      setFormData({
+        studentId: "",
+        classId: "",
+        sectionId: "",
+        subjectId: "",
+        date: new Date().toISOString().split("T")[0],
+        status: "Present",
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to mark attendance";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteAttendance = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this record?")) {
+      try {
+        await attendanceService.delete(id);
+        setAttendanceRecords(prev => prev.filter(a => a.id !== id));
+        toast.success("Attendance record deleted!");
+      } catch {
+        toast.error("Failed to delete attendance");
+      }
+    }
+  };
+
+  const getStudentName = (record: Attendance) => {
+    if (record.studentName) return record.studentName;
+    const student = students.find(s => s.id === record.studentId);
+    return student ? `${student.firstName} ${student.lastName}` : record.studentId;
+  };
+
+  const getClassName = (record: Attendance) => {
+    if (record.className) return record.className;
+    const cls = classes.find(c => c.id === record.classId);
+    return cls?.name ?? record.classId;
+  };
+
+  const getSectionName = (record: Attendance) => {
+    if (record.sectionName) return record.sectionName;
+    return record.sectionId;
+  };
+
+  const getSubjectName = (record: Attendance) => {
+    if (record.subjectName) return record.subjectName;
+    const subject = subjects.find(s => s.id === record.subjectId);
+    return subject?.name ?? record.subjectId;
+  };
   return (
     <div className="p-6 space-y-6">
       <div>
