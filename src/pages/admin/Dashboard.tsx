@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -11,19 +12,11 @@ import {
   FileText,
   DollarSign,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import InstallBanner from "@/components/InstallBanner";
-
-const stats = [
-  { title: "Total Students", value: "165", icon: Users, link: "/admin/students", color: "text-blue-600" },
-  { title: "Total Teachers", value: "24", icon: GraduationCap, link: "/admin/teachers", color: "text-purple-600" },
-  { title: "Active Classes", value: "12", icon: BookOpen, link: "/admin/classes", color: "text-green-600" },
-  { title: "Announcements", value: "8", icon: Megaphone, link: "/admin/announcements", color: "text-orange-600" },
-  { title: "Attendance Rate", value: "92.5%", icon: CalendarCheck, link: "/admin/attendance", color: "text-cyan-600" },
-  { title: "Average Marks", value: "85.3%", icon: TrendingUp, link: "/admin/marks", color: "text-pink-600" },
-  { title: "Learning Materials", value: "247", icon: FileText, link: "/admin/materials", color: "text-indigo-600" },
-  { title: "Pending Fees", value: "2", icon: DollarSign, link: "/admin/fees", color: "text-red-600" },
-];
+import { dashboardService, type DashboardData } from "@/services/dashboardService";
+import { toast } from "sonner";
 
 const recentActivities = [
   { type: "Student", action: "New student enrolled", detail: "John Doe - Class 10-A", time: "2 hours ago" },
@@ -33,6 +26,35 @@ const recentActivities = [
 ];
 
 export default function Dashboard() {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const data = await dashboardService.getDashboard();
+        setDashboardData(data);
+      } catch {
+        toast.error("Failed to fetch dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, []);
+
+  const stats = [
+    { title: "Total Students", value: dashboardData?.stats.totalStudents ?? 0, icon: Users, link: "/admin/students", color: "text-blue-600" },
+    { title: "Total Teachers", value: dashboardData?.stats.totalTeachers ?? 0, icon: GraduationCap, link: "/admin/teachers", color: "text-purple-600" },
+    { title: "Total Classes", value: dashboardData?.stats.totalClasses ?? 0, icon: BookOpen, link: "/admin/classes", color: "text-green-600" },
+    { title: "Total Sections", value: dashboardData?.stats.totalSections ?? 0, icon: Megaphone, link: "/admin/classes", color: "text-orange-600" },
+    { title: "Attendance Rate", value: `${dashboardData?.attendance.attendancePercentage ?? 0}%`, icon: CalendarCheck, link: "/admin/attendance", color: "text-cyan-600" },
+    { title: "Total Exams", value: dashboardData?.exams.totalExams ?? 0, icon: TrendingUp, link: "/admin/marks", color: "text-pink-600" },
+    { title: "Fees Collected", value: `₹${dashboardData?.fees.totalFeesCollected ?? 0}`, icon: DollarSign, link: "/admin/fees", color: "text-indigo-600" },
+    { title: "Pending Fees", value: `₹${dashboardData?.fees.totalPendingFees ?? 0}`, icon: FileText, link: "/admin/fees", color: "text-red-600" },
+  ];
+
   return (
     <div className="p-6 space-y-6">
       {/* Install Banner */}
@@ -45,25 +67,31 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Link key={stat.title} to={stat.link}>
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="flex items-center text-xs text-muted-foreground mt-1">
-                  View details
-                  <ArrowRight className="h-3 w-3 ml-1" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat) => (
+            <Link key={stat.title} to={stat.link}>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="flex items-center text-xs text-muted-foreground mt-1">
+                    View details
+                    <ArrowRight className="h-3 w-3 ml-1" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Quick Access Section */}
       <div className="grid gap-6 md:grid-cols-2">

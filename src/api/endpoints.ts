@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
     login: "/auth/login",
     register: "/auth/register",
   },
+  dashboard: "/dashboard",
   classes: {
     base: "/classes",
     byId: (classId: string) => `/classes/${classId}`,
