@@ -47,4 +47,10 @@ export const API_ENDPOINTS = {
     byId: (id: string) => `/attendance/${id}`,
     bulk: "/attendance/bulk",
   },
+  classTeacher: {
+    assign: "/class-teacher/assign",
+    base: "/class-teacher",
+    myClasses: "/class-teacher/my-classes",
+    check: (classId: string, sectionId: string) => `/class-teacher/check/${classId}/${sectionId}`,
+  },
 } as const;

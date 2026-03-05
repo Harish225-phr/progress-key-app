@@ -14,6 +14,7 @@ import Classes from "./pages/admin/Classes";
 import Subjects from "./pages/admin/Subjects";
 import Teachers from "./pages/admin/Teachers";
 import Mapping from "./pages/admin/Mapping";
+import ClassTeachers from "./pages/admin/ClassTeachers";
 import Attendance from "./pages/admin/Attendance";
 import Marks from "./pages/admin/Marks";
 import Behaviour from "./pages/admin/Behaviour";
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="subjects" element={<Subjects />} />
             <Route path="teachers" element={<Teachers />} />
             <Route path="mapping" element={<Mapping />} />
+            <Route path="class-teachers" element={<ClassTeachers />} />
             <Route path="attendance" element={<Attendance />} />
             <Route path="marks" element={<Marks />} />
             <Route path="behaviour" element={<Behaviour />} />

@@ -31,12 +31,13 @@ const ClassTeacherLayout = () => {
       return;
     }
     const parsedUser = JSON.parse(userData);
-    if (parsedUser.role !== "CLASS_TEACHER") {
+    const role = parsedUser.role?.toLowerCase();
+    if (role !== "class_teacher" && role !== "teacher") {
       navigate("/login");
       return;
     }
     setUser(parsedUser);
-  }, [navigate]);
+  }, []);
 
   const handleLogout = () => {
     sessionStorage.removeItem("user");

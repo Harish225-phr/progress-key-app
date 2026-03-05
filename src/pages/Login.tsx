@@ -44,13 +44,18 @@ const Login = () => {
             navigate("/student", { replace: true });
             break;
           default:
-            navigate("/", { replace: true });
+            // Unknown role - stay on login, clear invalid session
+            sessionStorage.removeItem("user");
+            sessionStorage.removeItem("token");
+            break;
         }
       } catch (error) {
         console.error("Error parsing user data:", error);
+        sessionStorage.removeItem("user");
+        sessionStorage.removeItem("token");
       }
     }
-  }, [navigate]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

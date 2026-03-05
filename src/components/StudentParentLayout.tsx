@@ -49,12 +49,13 @@ const StudentParentLayout = () => {
       return;
     }
     const parsedUser = JSON.parse(userData);
-    if (parsedUser.role !== "STUDENT_PARENT") {
+    const role = parsedUser.role?.toLowerCase();
+    if (role !== "student_parent" && role !== "student" && role !== "parent") {
       navigate("/login");
       return;
     }
     setUser(parsedUser);
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {

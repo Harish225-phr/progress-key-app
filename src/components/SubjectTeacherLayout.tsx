@@ -52,12 +52,13 @@ export default function SubjectTeacherLayout() {
       return;
     }
     const parsedUser = JSON.parse(userData);
-    if (parsedUser.role !== "SUBJECT_TEACHER") {
+    const role = parsedUser.role?.toLowerCase();
+    if (role !== "subject_teacher" && role !== "teacher") {
       navigate("/login");
       return;
     }
     setUser(parsedUser);
-  }, [navigate]);
+  }, []);
 
   const handleLogout = () => {
     sessionStorage.removeItem("user");

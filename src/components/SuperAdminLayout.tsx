@@ -29,6 +29,7 @@ const menuItems = [
   { icon: GraduationCap, label: "Subjects", path: "/admin/subjects" },
   { icon: UserCog, label: "Teachers", path: "/admin/teachers" },
   { icon: Link2, label: "Teacher Mapping", path: "/admin/mapping" },
+  { icon: UserCog, label: "Class Teachers", path: "/admin/class-teachers" },
   { icon: CalendarCheck, label: "Attendance Reports", path: "/admin/attendance" },
   { icon: FileText, label: "Test/Marks Reports", path: "/admin/marks" },
   { icon: TrendingUp, label: "Behaviour Reports", path: "/admin/behaviour" },
