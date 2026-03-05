@@ -78,8 +78,8 @@ export const getClassById = async (classId: string): Promise<ClassResponse> => {
 };
 
 // Update class
-export const updateClass = async (classId: string, classData: ClassData): Promise<ClassResponse> => {
-  const response = await apiClient.put<ClassApiResponse>(API_ENDPOINTS.classes.byId(classId), classData);
+export const updateClass = async (classId: string, classData: Partial<ClassData>): Promise<ClassResponse> => {
+  const response = await apiClient.patch<ClassApiResponse>(API_ENDPOINTS.classes.byId(classId), classData);
   return normalizeClass(response);
 };
 
@@ -91,4 +91,24 @@ export const deleteClass = async (classId: string): Promise<void> => {
 // Add a new section
 export const addSection = async (sectionData: SectionData): Promise<SectionResponse> => {
   return apiClient.post<SectionResponse>(API_ENDPOINTS.sections.base, sectionData);
+};
+
+// Get all sections
+export const getSections = async (): Promise<SectionResponse[]> => {
+  return apiClient.get<SectionResponse[]>(API_ENDPOINTS.sections.base);
+};
+
+// Get sections by class ID
+export const getSectionsByClassId = async (classId: string): Promise<SectionResponse[]> => {
+  return apiClient.get<SectionResponse[]>(API_ENDPOINTS.sections.byClassId(classId));
+};
+
+// Update section
+export const updateSection = async (sectionId: string, sectionData: Partial<SectionData>): Promise<SectionResponse> => {
+  return apiClient.patch<SectionResponse>(API_ENDPOINTS.sections.byId(sectionId), sectionData);
+};
+
+// Delete section
+export const deleteSection = async (sectionId: string): Promise<void> => {
+  await apiClient.delete<void>(API_ENDPOINTS.sections.byId(sectionId));
 };

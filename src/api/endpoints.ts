@@ -4,6 +4,7 @@
 export const API_ENDPOINTS = {
   auth: {
     login: "/auth/login",
+    register: "/auth/register",
   },
   classes: {
     base: "/classes",
@@ -12,6 +13,7 @@ export const API_ENDPOINTS = {
   sections: {
     base: "/sections",
     byId: (sectionId: string) => `/sections/${sectionId}`,
+    byClassId: (classId: string) => `/sections/class/${classId}`,
   },
   users: {
     base: "/users",
