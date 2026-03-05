@@ -24,4 +24,8 @@ export const API_ENDPOINTS = {
     base: "/students",
     byId: (studentId: string) => `/students/${studentId}`,
   },
+  subjects: {
+    base: "/subjects",
+    byId: (subjectId: string) => `/subjects/${subjectId}`,
+  },
 } as const;
