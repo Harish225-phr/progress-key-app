@@ -23,20 +23,24 @@ const Login = () => {
     if (user && token) {
       try {
         const userData = JSON.parse(user);
-        const role = userData.role;
+        const role = userData.role?.toLowerCase();
         
         // Redirect to appropriate dashboard based on role
         switch (role) {
           case "school_admin":
+          case "admin":
             navigate("/admin", { replace: true });
             break;
-          case "CLASS_TEACHER":
+          case "teacher":
+          case "class_teacher":
             navigate("/class-teacher", { replace: true });
             break;
-          case "SUBJECT_TEACHER":
+          case "subject_teacher":
             navigate("/subject-teacher", { replace: true });
             break;
-          case "STUDENT_PARENT":
+          case "student":
+          case "parent":
+          case "student_parent":
             navigate("/student", { replace: true });
             break;
           default:
@@ -67,18 +71,22 @@ const Login = () => {
       toast.success("Login successful!");
 
       // Route based on role
-      const role = user?.role;
+      const role = user?.role?.toLowerCase();
       switch (role) {
         case "school_admin":
+        case "admin":
           navigate("/admin");
           break;
-        case "CLASS_TEACHER":
+        case "teacher":
+        case "class_teacher":
           navigate("/class-teacher");
           break;
-        case "SUBJECT_TEACHER":
+        case "subject_teacher":
           navigate("/subject-teacher");
           break;
-        case "STUDENT_PARENT":
+        case "student":
+        case "parent":
+        case "student_parent":
           navigate("/student");
           break;
         default:

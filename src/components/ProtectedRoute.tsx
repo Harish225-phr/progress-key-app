@@ -18,9 +18,12 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
   if (allowedRoles && allowedRoles.length > 0) {
     try {
       const userData = JSON.parse(user);
-      const userRole = userData.role;
+      const userRole = userData.role?.toLowerCase();
 
-      if (!allowedRoles.includes(userRole)) {
+      // Normalize allowedRoles to lowercase for comparison
+      const normalizedAllowedRoles = allowedRoles.map(r => r.toLowerCase());
+
+      if (!normalizedAllowedRoles.includes(userRole)) {
         // User is logged in but doesn't have the right role
         return <Navigate to="/" replace />;
       }

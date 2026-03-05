@@ -69,7 +69,7 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           
           {/* Super Admin Routes */}
-          <Route path="/admin" element={<ProtectedRoute allowedRoles={["school_admin"]}><SuperAdminLayout /></ProtectedRoute>}>
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={["school_admin", "admin"]}><SuperAdminLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="students" element={<Students />} />
@@ -87,7 +87,7 @@ const App = () => (
           </Route>
 
           {/* Class Teacher Routes */}
-          <Route path="/class-teacher" element={<ProtectedRoute allowedRoles={["CLASS_TEACHER"]}><ClassTeacherLayout /></ProtectedRoute>}>
+          <Route path="/class-teacher" element={<ProtectedRoute allowedRoles={["CLASS_TEACHER", "teacher"]}><ClassTeacherLayout /></ProtectedRoute>}>
             <Route index element={<ClassTeacherDashboard />} />
             <Route path="students" element={<StudentList />} />
             <Route path="students/:id" element={<StudentProfile />} />
@@ -100,7 +100,7 @@ const App = () => (
           </Route>
 
           {/* Subject Teacher Routes */}
-          <Route path="/subject-teacher" element={<ProtectedRoute allowedRoles={["SUBJECT_TEACHER"]}><SubjectTeacherLayout /></ProtectedRoute>}>
+          <Route path="/subject-teacher" element={<ProtectedRoute allowedRoles={["SUBJECT_TEACHER", "teacher"]}><SubjectTeacherLayout /></ProtectedRoute>}>
             <Route index element={<SubjectTeacherDashboard />} />
             <Route path="materials" element={<SubjectMaterials />} />
             <Route path="homework" element={<SubjectHomework />} />
@@ -112,7 +112,7 @@ const App = () => (
           </Route>
 
           {/* Student/Parent Routes */}
-          <Route path="/student" element={<ProtectedRoute allowedRoles={["STUDENT_PARENT"]}><StudentParentLayout /></ProtectedRoute>}>
+          <Route path="/student" element={<ProtectedRoute allowedRoles={["STUDENT_PARENT", "student", "parent"]}><StudentParentLayout /></ProtectedRoute>}>
             <Route index element={<StudentDashboard />} />
             <Route path="attendance" element={<StudentAttendance />} />
             <Route path="homework" element={<StudentHomework />} />
