@@ -6,9 +6,68 @@ export interface User {
   name: string;
   email: string;
   role: string;
+  isActive?: boolean;
+  schoolId?: string;
   created_at?: string;
-  [key: string]: unknown;
 }
+
+type UserApiResponse = {
+  id?: string;
+  _id?: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  isActive?: boolean;
+  schoolId?: string;
+  created_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+type UsersListResponse = {
+  success?: boolean;
+  data?: UserApiResponse[];
+} | UserApiResponse[];
+
+type SingleUserResponse = {
+  success?: boolean;
+  data?: UserApiResponse;
+} | UserApiResponse;
+
+const normalizeUser = (item: UserApiResponse): User => {
+  const normalizedId = item.id ?? item._id;
+
+  if (!normalizedId) {
+    throw new Error("User id is missing in API response");
+  }
+
+  return {
+    id: String(normalizedId),
+    name: item.name ?? "",
+    email: item.email ?? "",
+    role: item.role ?? "",
+    isActive: item.isActive,
+    schoolId: item.schoolId,
+    created_at: item.created_at ?? item.createdAt,
+  };
+};
+
+const extractUsersArray = (response: UsersListResponse): UserApiResponse[] => {
+  if (Array.isArray(response)) {
+    return response;
+  }
+  if (response.data && Array.isArray(response.data)) {
+    return response.data;
+  }
+  return [];
+};
+
+const extractSingleUser = (response: SingleUserResponse): UserApiResponse => {
+  if ('data' in response && response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+    return response.data;
+  }
+  return response as UserApiResponse;
+};
 
 export interface CreateUserPayload {
   name: string;
@@ -18,16 +77,34 @@ export interface CreateUserPayload {
 }
 
 export const userService = {
-  getAll: () => apiClient.get<User[]>(API_ENDPOINTS.users.base),
+  getAll: async (): Promise<User[]> => {
+    const response = await apiClient.get<UsersListResponse>(API_ENDPOINTS.users.base);
+    const usersArray = extractUsersArray(response);
+    return usersArray
+      .map((item) => {
+        try {
+          return normalizeUser(item);
+        } catch {
+          return null;
+        }
+      })
+      .filter((item): item is User => item !== null);
+  },
 
-  getById: (userId: string) =>
-    apiClient.get<User>(API_ENDPOINTS.users.byId(userId)),
+  getById: async (userId: string): Promise<User> => {
+    const response = await apiClient.get<SingleUserResponse>(API_ENDPOINTS.users.byId(userId));
+    return normalizeUser(extractSingleUser(response));
+  },
 
-  create: (payload: CreateUserPayload) =>
-    apiClient.post<User>(API_ENDPOINTS.users.base, payload),
+  create: async (payload: CreateUserPayload): Promise<User> => {
+    const response = await apiClient.post<SingleUserResponse>(API_ENDPOINTS.users.base, payload);
+    return normalizeUser(extractSingleUser(response));
+  },
 
-  update: (userId: string, payload: Partial<CreateUserPayload>) =>
-    apiClient.put<User>(API_ENDPOINTS.users.byId(userId), payload),
+  update: async (userId: string, payload: Partial<CreateUserPayload>): Promise<User> => {
+    const response = await apiClient.put<SingleUserResponse>(API_ENDPOINTS.users.byId(userId), payload);
+    return normalizeUser(extractSingleUser(response));
+  },
 
   delete: (userId: string) =>
     apiClient.delete<void>(API_ENDPOINTS.users.byId(userId)),

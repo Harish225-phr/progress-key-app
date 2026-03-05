@@ -26,32 +26,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Plus, Edit, Trash2, AlertCircle, Loader2 } from "lucide-react";
+
+import { Plus, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useClasses } from "@/hooks/useClasses";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { addSection } from "@/services/classService";
+import { addSection, getSections, deleteSection, type SectionResponse } from "@/services/classService";
 import { userService, type User } from "@/services/userService";
-
-type SectionRow = {
-  id: string;
-  className: string;
-  name: string;
-  students: number;
-  status: boolean;
-};
-
-const mockSections: SectionRow[] = [
-  { id: "1", className: "Class 9", name: "Section A", students: 30, status: true },
-  { id: "2", className: "Class 9", name: "Section B", students: 30, status: true },
-  { id: "3", className: "Class 10", name: "Section A", students: 28, status: true },
-  { id: "4", className: "Class 10", name: "Section B", students: 27, status: true },
-];
 
 export default function Classes() {
   const { classes, loading, error, addClass, deleteClass, fetchClasses, clearError } = useClasses();
-  const [sections, setSections] = useState<SectionRow[]>(mockSections);
+  const [sections, setSections] = useState<SectionResponse[]>([]);
+  const [sectionsLoading, setSectionsLoading] = useState(false);
   const [classDialogOpen, setClassDialogOpen] = useState(false);
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
   const [className, setClassName] = useState("");
@@ -68,12 +54,25 @@ export default function Classes() {
     fetchClasses();
   }, [fetchClasses]);
 
+  // Fetch sections
+  useEffect(() => {
+    const fetchSections = async () => {
+      setSectionsLoading(true);
+      try {
+        const sectionsData = await getSections();
+        setSections(sectionsData);
+      } catch {
+        toast.error("Failed to fetch sections");
+      } finally {
+        setSectionsLoading(false);
+      }
+    };
+
+    fetchSections();
+  }, []);
+
   useEffect(() => {
     const fetchTeachers = async () => {
-      if (!sectionDialogOpen) {
-        return;
-      }
-
       setTeachersLoading(true);
       try {
         const users = await userService.getAll();
@@ -90,7 +89,7 @@ export default function Classes() {
     };
 
     fetchTeachers();
-  }, [sectionDialogOpen]);
+  }, []);
 
   // Validate class name
   const validateClassName = (name: string): boolean => {
@@ -159,7 +158,7 @@ export default function Classes() {
       return;
     }
 
-    if (!sectionClassTeacher.trim()) {
+    if (!sectionClassTeacher) {
       toast.error("Class teacher is required");
       return;
     }
@@ -170,21 +169,10 @@ export default function Classes() {
       const createdSection = await addSection({
         name: sectionName.trim(),
         classId: selectedSectionClassId,
-        classTeacher: sectionClassTeacher.trim(),
+        classTeacher: sectionClassTeacher,
       });
 
-      const selectedClass = classes.find((cls) => String(cls.id) === selectedSectionClassId);
-
-      setSections((prevSections) => [
-        ...prevSections,
-        {
-          id: createdSection.id,
-          className: selectedClass?.name ?? "-",
-          name: createdSection.name,
-          students: 0,
-          status: true,
-        },
-      ]);
+      setSections((prevSections) => [...prevSections, createdSection]);
 
       toast.success("Section added successfully!");
       setSectionName("");
@@ -197,6 +185,30 @@ export default function Classes() {
     } finally {
       setIsSectionSubmitting(false);
     }
+  };
+
+  const handleDeleteSection = async (sectionId: string) => {
+    if (window.confirm("Are you sure you want to delete this section?")) {
+      try {
+        await deleteSection(sectionId);
+        setSections((prev) => prev.filter((s) => s.id !== sectionId));
+        toast.success("Section deleted successfully!");
+      } catch {
+        toast.error("Failed to delete section");
+      }
+    }
+  };
+
+  const getClassName = (section: SectionResponse) => {
+    if (section.className) return section.className;
+    const cls = classes.find((c) => String(c.id) === section.classId);
+    return cls?.name ?? section.classId;
+  };
+
+  const getTeacherName = (section: SectionResponse) => {
+    if (section.classTeacherName) return section.classTeacherName;
+    const teacher = teachers.find((t) => String(t.id) === section.classTeacher);
+    return teacher?.name ?? section.classTeacher;
   };
 
   return (
@@ -391,7 +403,7 @@ export default function Classes() {
                       </SelectTrigger>
                       <SelectContent>
                         {teachers.map((teacher) => (
-                          <SelectItem key={String(teacher.id)} value={String(teacher.name)}>
+                          <SelectItem key={String(teacher.id)} value={String(teacher.id)}>
                             {teacher.name}
                           </SelectItem>
                         ))}
@@ -407,7 +419,7 @@ export default function Classes() {
                       teachers.length === 0 ||
                       !selectedSectionClassId ||
                       !sectionName.trim() ||
-                      !sectionClassTeacher.trim()
+                      !sectionClassTeacher
                     }
                   >
                     {isSectionSubmitting ? (
@@ -424,39 +436,47 @@ export default function Classes() {
             </Dialog>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Class</TableHead>
-                  <TableHead>Section Name</TableHead>
-                  <TableHead>Students</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sections.map((section) => (
-                  <TableRow key={section.id}>
-                    <TableCell className="font-medium">{section.className}</TableCell>
-                    <TableCell>{section.name}</TableCell>
-                    <TableCell>{section.students}</TableCell>
-                    <TableCell>
-                      <Badge variant={section.status ? "default" : "secondary"}>
-                        {section.status ? "Active" : "Disabled"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Switch checked={section.status} />
-                      </div>
-                    </TableCell>
+            {sectionsLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : sections.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No sections found. Add one to get started.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Class</TableHead>
+                    <TableHead>Section Name</TableHead>
+                    <TableHead>Class Teacher</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {sections.map((section) => (
+                    <TableRow key={section.id}>
+                      <TableCell className="font-medium">{getClassName(section)}</TableCell>
+                      <TableCell>{section.name}</TableCell>
+                      <TableCell>{getTeacherName(section)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteSection(section.id)}
+                            title="Delete section"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
