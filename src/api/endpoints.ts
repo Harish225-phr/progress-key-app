@@ -28,4 +28,12 @@ export const API_ENDPOINTS = {
     base: "/subjects",
     byId: (subjectId: string) => `/subjects/${subjectId}`,
   },
+  exams: {
+    base: "/results/exams",
+    byId: (examId: string) => `/results/exams/${examId}`,
+  },
+  results: {
+    base: "/results/results",
+    byId: (resultId: string) => `/results/results/${resultId}`,
+  },
 } as const;
