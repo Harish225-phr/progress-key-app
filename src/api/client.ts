@@ -1,5 +1,11 @@
-import { ApiError } from "@/api/errors";
+import { ApiError, RetryRequestError } from "@/api/errors";
 import { API_BASE_URL } from "@/api/endpoints";
+
+const AUTH_REFRESH_PATH = "auth/refresh";
+
+/** Use accessToken for Authorization; fallback to legacy "token" */
+export const getAccessToken = (): string | null =>
+  sessionStorage.getItem("accessToken") ?? sessionStorage.getItem("token");
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -12,6 +18,7 @@ type ApiRequestConfig = Omit<RequestInit, "method" | "body" | "headers"> & {
 
 type ApiRequestContext = {
   url: string;
+  endpoint: string;
   config: ApiRequestConfig;
 };
 
@@ -70,7 +77,7 @@ const defaultRequestInterceptor: RequestInterceptor = (context) => {
   }
 
   if (config.requiresAuth !== false) {
-    const token = sessionStorage.getItem("token");
+    const token = getAccessToken();
     if (token && !nextHeaders.has("Authorization")) {
       nextHeaders.set("Authorization", `Bearer ${token}`);
     }
@@ -118,9 +125,45 @@ const unwrapApiResponse = <T>(payload: unknown): T => {
   return payload as T;
 };
 
+let onRefreshFailure: (() => void) | null = null;
+/** Call this (e.g. from auth module) to redirect to login when refresh fails */
+export const setOnRefreshFailure = (fn: () => void) => {
+  onRefreshFailure = fn;
+};
+
+let refreshTokenFn: (() => Promise<void>) | null = null;
+/** Set the function that refreshes tokens (e.g. authService.refreshToken). Called on 401 before retry. */
+export const setRefreshTokenFn = (fn: () => Promise<void>) => {
+  refreshTokenFn = fn;
+};
+
+const isRefreshRequest = (url: string) =>
+  url.includes(AUTH_REFRESH_PATH) || url.endsWith("/auth/refresh");
+
+const authErrorInterceptor: ErrorInterceptor = async (error, context) => {
+  if (error.status !== 401 || isRefreshRequest(context.url)) {
+    return error;
+  }
+  if (!refreshTokenFn) {
+    onRefreshFailure?.();
+    return error;
+  }
+  try {
+    await refreshTokenFn();
+    throw new RetryRequestError();
+  } catch (e) {
+    if (e instanceof RetryRequestError) throw e;
+    onRefreshFailure?.();
+    return error;
+  }
+};
+errorInterceptors.push(authErrorInterceptor);
+
 const request = async <T>(endpoint: string, config: ApiRequestConfig = {}): Promise<T> => {
+  const normalizedEndpoint = normalizePath(endpoint);
   const initialContext: ApiRequestContext = {
-    url: `${API_BASE_URL}/${normalizePath(endpoint)}`,
+    url: `${API_BASE_URL}/${normalizedEndpoint}`,
+    endpoint: normalizedEndpoint,
     config,
   };
 
@@ -159,7 +202,13 @@ const request = async <T>(endpoint: string, config: ApiRequestConfig = {}): Prom
     const payload = await safeParseResponseBody(nextResponse);
     return unwrapApiResponse<T>(payload);
   } catch (error) {
+    if (error instanceof RetryRequestError) {
+      return request<T>(endpoint, config);
+    }
     const mappedError = await applyErrorInterceptors(toApiError(error), context);
+    if (mappedError instanceof RetryRequestError) {
+      return request<T>(endpoint, config);
+    }
     throw mappedError;
   }
 };

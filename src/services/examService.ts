@@ -4,8 +4,10 @@ import { API_ENDPOINTS } from "@/api/endpoints";
 export interface ExamData {
   name: string;
   classId: string;
-  academicYear: string;
-  examDate: string;
+  /** Optional; backend uses current academic year if omitted */
+  academicYear?: string;
+  /** Optional */
+  examDate?: string;
 }
 
 export interface Exam {

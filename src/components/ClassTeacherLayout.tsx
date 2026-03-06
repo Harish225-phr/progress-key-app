@@ -17,6 +17,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { logout } from "@/services/authService";
 
 const ClassTeacherLayout = () => {
   const navigate = useNavigate();
@@ -39,9 +40,8 @@ const ClassTeacherLayout = () => {
     setUser(parsedUser);
   }, []);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("user");
-    sessionStorage.removeItem("token");
+  const handleLogout = async () => {
+    await logout();
     toast.success("Logged out successfully");
     navigate("/login");
   };

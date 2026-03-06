@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { classTeacherService, type ClassTeacherAssignment, type AssignClassTeacherData } from "@/services/classTeacherService";
 import { userService, type User } from "@/services/userService";
 import { getClasses, getSectionsByClassId, type SectionResponse } from "@/services/classService";
+import { useAcademicYear } from "@/hooks/useAcademicYear";
 
 export default function ClassTeachers() {
   const [assignments, setAssignments] = useState<ClassTeacherAssignment[]>([]);
@@ -39,16 +40,26 @@ export default function ClassTeachers() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { list: academicYears, current: currentYear } = useAcademicYear();
+  const defaultYear = currentYear?.name ?? currentYear?.id ?? new Date().getFullYear().toString();
   const [formData, setFormData] = useState<AssignClassTeacherData>({
     teacherId: "",
     classId: "",
     sectionId: "",
-    academicYear: new Date().getFullYear().toString(),
+    academicYear: "",
   });
+  const [filterAcademicYear, setFilterAcademicYear] = useState<string>("");
+  const [filterClassId, setFilterClassId] = useState<string>("");
+
+  useEffect(() => {
+    if (defaultYear && !formData.academicYear) {
+      setFormData((prev) => ({ ...prev, academicYear: defaultYear }));
+    }
+  }, [defaultYear]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [filterAcademicYear, filterClassId]);
 
   useEffect(() => {
     if (formData.classId) {
@@ -62,7 +73,10 @@ export default function ClassTeachers() {
   const fetchData = async () => {
     try {
       const [assignmentsData, usersData, classesData] = await Promise.all([
-        classTeacherService.getAll(),
+        classTeacherService.getAll({
+          ...(filterAcademicYear ? { academicYear: filterAcademicYear } : {}),
+          ...(filterClassId ? { classId: filterClassId } : {}),
+        }),
         userService.getAll(),
         getClasses(),
       ]);
@@ -101,6 +115,10 @@ export default function ClassTeachers() {
       toast.error("Please select a section");
       return;
     }
+    if (!formData.academicYear) {
+      toast.error("Please select an academic year");
+      return;
+    }
 
     // Check if already assigned
     const existing = assignments.find(
@@ -134,7 +152,7 @@ export default function ClassTeachers() {
         teacherId: "",
         classId: "",
         sectionId: "",
-        academicYear: new Date().getFullYear().toString(),
+        academicYear: defaultYear,
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to assign class teacher";
@@ -239,7 +257,7 @@ export default function ClassTeachers() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="academicYear">Academic Year</Label>
+                <Label htmlFor="academicYear">Academic Year *</Label>
                 <Select
                   value={formData.academicYear}
                   onValueChange={(value) => setFormData({ ...formData, academicYear: value })}
@@ -249,9 +267,14 @@ export default function ClassTeachers() {
                     <SelectValue placeholder="Select year" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="2024">2024</SelectItem>
-                    <SelectItem value="2025">2025</SelectItem>
-                    <SelectItem value="2026">2026</SelectItem>
+                    {academicYears.map((ay) => (
+                      <SelectItem key={ay.id} value={ay.name ?? ay.id}>
+                        {ay.name ?? ay.id}
+                      </SelectItem>
+                    ))}
+                    {academicYears.length === 0 && (
+                      <SelectItem value={defaultYear}>{defaultYear}</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -276,6 +299,40 @@ export default function ClassTeachers() {
             <UserCheck className="h-5 w-5" />
             Current Assignments ({assignments.length})
           </CardTitle>
+          <div className="flex flex-wrap gap-4 pt-2">
+            <div className="space-y-1">
+              <Label>Academic Year</Label>
+              <Select value={filterAcademicYear} onValueChange={setFilterAcademicYear}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="All years" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All years</SelectItem>
+                  {academicYears.map((ay) => (
+                    <SelectItem key={ay.id} value={ay.name ?? ay.id}>
+                      {ay.name ?? ay.id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Class</Label>
+              <Select value={filterClassId} onValueChange={setFilterClassId}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="All classes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All classes</SelectItem>
+                  {classes.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -317,9 +374,16 @@ export default function ClassTeachers() {
                         variant="ghost"
                         size="sm"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => {
-                          // TODO: Implement delete when backend supports it
-                          toast.info("Delete functionality coming soon");
+                        disabled={loading}
+                        onClick={async () => {
+                          if (!window.confirm("Remove this class teacher assignment?")) return;
+                          try {
+                            await classTeacherService.delete(assignment.id);
+                            setAssignments((prev) => prev.filter((a) => a.id !== assignment.id));
+                            toast.success("Assignment removed");
+                          } catch {
+                            toast.error("Failed to remove assignment");
+                          }
                         }}
                       >
                         <Trash2 className="h-4 w-4" />

@@ -1,6 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   DollarSign,
@@ -8,6 +16,7 @@ import {
   Download,
   CreditCard,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -15,12 +24,41 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getStoredUser } from "@/services/authService";
+import { feeService, type StudentFeeDetail } from "@/services/feeService";
+import { useAcademicYear } from "@/hooks/useAcademicYear";
 
 const FeesPage = () => {
-  // Toggle this to see different states
-  const [isPaid, setIsPaid] = useState(true);
+  const { list: academicYears, current: currentYear } = useAcademicYear();
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>("");
+  const [feeDetail, setFeeDetail] = useState<StudentFeeDetail | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
   const [processing, setProcessing] = useState(false);
+
+  const user = getStoredUser();
+  const studentId = user?.id ?? "";
+
+  useEffect(() => {
+    if (!studentId) {
+      setLoading(false);
+      return;
+    }
+    const year = selectedAcademicYear || currentYear?.name || currentYear?.id;
+    setLoading(true);
+    feeService
+      .getStudentDetails(studentId, year ? { academicYear: year } : undefined)
+      .then(setFeeDetail)
+      .catch(() => {
+        setFeeDetail(null);
+        toast.error("Failed to load fee details");
+      })
+      .finally(() => setLoading(false));
+  }, [studentId, selectedAcademicYear, currentYear?.name, currentYear?.id]);
+
+  const isPaid = feeDetail
+    ? (feeDetail.pendingAmount ?? 0) <= 0 && (feeDetail.totalAmount ?? 0) > 0
+    : true;
 
   const handlePayNow = () => {
     setProcessing(true);
@@ -45,6 +83,33 @@ const FeesPage = () => {
         <p className="text-muted-foreground">View and manage your fee status</p>
       </div>
 
+      {academicYears.length > 0 && (
+        <div className="space-y-2">
+          <Label>Academic Year</Label>
+          <Select
+            value={selectedAcademicYear || (currentYear?.name ?? currentYear?.id ?? "")}
+            onValueChange={setSelectedAcademicYear}
+          >
+            <SelectTrigger className="w-full max-w-xs">
+              <SelectValue placeholder="Current year" />
+            </SelectTrigger>
+            <SelectContent>
+              {academicYears.map((ay) => (
+                <SelectItem key={ay.id} value={ay.name ?? ay.id}>
+                  {ay.name ?? ay.id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <>
       {/* Fee Status Card */}
       <Card className="overflow-hidden">
         {isPaid ? (
@@ -100,7 +165,29 @@ const FeesPage = () => {
         )}
       </Card>
 
-      {/* Toggle Button for Demo */}
+      {feeDetail && (feeDetail.totalAmount ?? 0) > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid gap-4">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total</span>
+                <span className="font-medium">₹{feeDetail.totalAmount?.toLocaleString() ?? 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Paid</span>
+                <span className="text-green-600">₹{feeDetail.paidAmount?.toLocaleString() ?? 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Pending</span>
+                <span className="text-destructive">₹{feeDetail.pendingAmount?.toLocaleString() ?? 0}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Toggle Button for Demo (when no API data) */}
+      {!feeDetail && !loading && (
       <Card>
         <CardContent className="pt-4">
           <p className="text-sm text-muted-foreground mb-3 text-center">
@@ -124,6 +211,9 @@ const FeesPage = () => {
           </div>
         </CardContent>
       </Card>
+      )}
+        </>
+      )}
 
       {/* Payment Success Dialog */}
       <Dialog open={showPaymentSuccess} onOpenChange={setShowPaymentSuccess}>

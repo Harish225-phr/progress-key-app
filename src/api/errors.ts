@@ -12,6 +12,14 @@ export class ApiError extends Error {
   }
 }
 
+/** Thrown by 401 interceptor to signal retry after token refresh */
+export class RetryRequestError extends Error {
+  constructor() {
+    super("Retry request after refresh");
+    this.name = "RetryRequestError";
+  }
+}
+
 export const getErrorMessage = (error: unknown, fallback = "Something went wrong") => {
   if (error instanceof ApiError) {
     return error.message;

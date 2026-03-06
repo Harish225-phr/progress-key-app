@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
+import { useAcademicYear } from "@/hooks/useAcademicYear";
 
 const mockFees = [
   { id: 1, student: "John Smith", class: "10-A", amount: 15000, paid: 15000, pending: 0, status: "Paid", lastPayment: "2024-01-05" },
@@ -27,6 +29,9 @@ const mockFees = [
 ];
 
 export default function Fees() {
+  const { list: academicYears, current: currentYear } = useAcademicYear();
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>("");
+  const displayYear = selectedAcademicYear || currentYear?.name || currentYear?.id || "current";
   const totalCollected = mockFees.reduce((sum, fee) => sum + fee.paid, 0);
   const totalPending = mockFees.reduce((sum, fee) => sum + fee.pending, 0);
   const totalAmount = mockFees.reduce((sum, fee) => sum + fee.amount, 0);
@@ -49,7 +54,9 @@ export default function Fees() {
               ₹{totalCollected.toLocaleString()}
               <CheckCircle className="h-5 w-5" />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">This academic year</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {displayYear !== "current" ? displayYear : "Current academic year"}
+            </p>
           </CardContent>
         </Card>
 
@@ -98,6 +105,24 @@ export default function Fees() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Academic Year</Label>
+              <Select
+                value={selectedAcademicYear || (currentYear?.name ?? currentYear?.id ?? "")}
+                onValueChange={setSelectedAcademicYear}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Current year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {academicYears.map((ay) => (
+                    <SelectItem key={ay.id} value={ay.name ?? ay.id}>
+                      {ay.name ?? ay.id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label>Class</Label>
               <Select>

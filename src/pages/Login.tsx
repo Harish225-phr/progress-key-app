@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { GraduationCap } from "lucide-react";
-import { login } from "@/services/authService";
+import { login, setAuthTokens } from "@/services/authService";
 import { getErrorMessage } from "@/api/errors";
 
 const Login = () => {
@@ -15,10 +15,10 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Check if already logged in
+  // Check if already logged in (accessToken or legacy token)
   useEffect(() => {
     const user = sessionStorage.getItem("user");
-    const token = sessionStorage.getItem("token");
+    const token = sessionStorage.getItem("accessToken") ?? sessionStorage.getItem("token");
     
     if (user && token) {
       try {
@@ -46,12 +46,16 @@ const Login = () => {
           default:
             // Unknown role - stay on login, clear invalid session
             sessionStorage.removeItem("user");
+            sessionStorage.removeItem("accessToken");
+            sessionStorage.removeItem("refreshToken");
             sessionStorage.removeItem("token");
             break;
         }
       } catch (error) {
         console.error("Error parsing user data:", error);
         sessionStorage.removeItem("user");
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("refreshToken");
         sessionStorage.removeItem("token");
       }
     }
@@ -64,19 +68,18 @@ const Login = () => {
     try {
       const responseData = await login({ email, password });
 
-      // Extract token and user from the nested data structure
-      const { token, user } = responseData;
-
-      // Store user data and token in session storage
-      sessionStorage.setItem("user", JSON.stringify(user));
-      if (token) {
-        sessionStorage.setItem("token", token);
-      }
+      // Store accessToken, refreshToken, and user (use token as legacy fallback)
+      setAuthTokens({
+        accessToken: responseData.accessToken,
+        refreshToken: responseData.refreshToken,
+        token: responseData.token,
+        user: responseData.user,
+      });
 
       toast.success("Login successful!");
 
       // Route based on role
-      const role = user?.role?.toLowerCase();
+      const role = responseData.user?.role?.toLowerCase();
       switch (role) {
         case "school_admin":
         case "admin":

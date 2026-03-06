@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const user = sessionStorage.getItem("user");
-  const token = sessionStorage.getItem("token");
+  const token = sessionStorage.getItem("accessToken") ?? sessionStorage.getItem("token");
 
   // If not logged in, redirect to login
   if (!user || !token) {

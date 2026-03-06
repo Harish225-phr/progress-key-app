@@ -28,6 +28,7 @@ import {
   LogOut,
   GraduationCap,
 } from "lucide-react";
+import { logout } from "@/services/authService";
 
 const menuItems = [
   { title: "Dashboard", url: "/subject-teacher", icon: LayoutDashboard },
@@ -60,9 +61,8 @@ export default function SubjectTeacherLayout() {
     setUser(parsedUser);
   }, []);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("user");
-    sessionStorage.removeItem("token");
+  const handleLogout = async () => {
+    await logout();
     toast.success("Logged out successfully");
     navigate("/login");
   };

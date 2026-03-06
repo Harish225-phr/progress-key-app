@@ -83,10 +83,22 @@ const extractAssignmentsArray = (response: ClassTeacherListResponse): ClassTeach
   return [];
 };
 
+const buildQuery = (params?: { academicYear?: string; classId?: string }) => {
+  if (!params) return "";
+  const search = new URLSearchParams();
+  if (params.academicYear) search.set("academicYear", params.academicYear);
+  if (params.classId) search.set("classId", params.classId);
+  const q = search.toString();
+  return q ? `?${q}` : "";
+};
+
 export const classTeacherService = {
-  // Get all class teacher assignments (admin)
-  getAll: async (): Promise<ClassTeacherAssignment[]> => {
-    const response = await apiClient.get<ClassTeacherListResponse>(API_ENDPOINTS.classTeacher.base);
+  // Get all class teacher assignments (admin). Optional filters: academicYear, classId
+  getAll: async (params?: { academicYear?: string; classId?: string }): Promise<ClassTeacherAssignment[]> => {
+    const query = buildQuery(params);
+    const response = await apiClient.get<ClassTeacherListResponse>(
+      `${API_ENDPOINTS.classTeacher.base}${query}`
+    );
     const assignmentsArray = extractAssignmentsArray(response);
     return assignmentsArray
       .map((item) => {
@@ -133,5 +145,10 @@ export const classTeacherService = {
       data
     );
     return normalizeAssignment(response);
+  },
+
+  // Remove class teacher assignment (admin only)
+  delete: async (id: string): Promise<void> => {
+    await apiClient.delete(API_ENDPOINTS.classTeacher.byId(id));
   },
 };

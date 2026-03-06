@@ -33,6 +33,7 @@ import { resultService, type Result, type ResultData } from "@/services/resultSe
 import { getClasses } from "@/services/classService";
 import { studentService, type Student } from "@/services/studentService";
 import { subjectService, type Subject } from "@/services/subjectService";
+import { useAcademicYear } from "@/hooks/useAcademicYear";
 
 
 
@@ -48,10 +49,12 @@ export default function Marks() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [results, setResults] = useState<Result[]>([]);
   const [resultsLoading, setResultsLoading] = useState(true);
+  const { list: academicYears, current: currentYear } = useAcademicYear();
+  const defaultAcademicYear = currentYear?.name ?? currentYear?.id ?? "";
   const [formData, setFormData] = useState<ExamData>({
     name: "",
     classId: "",
-    academicYear: "",
+    academicYear: defaultAcademicYear,
     examDate: "",
   });
   const [marksFormData, setMarksFormData] = useState<ResultData>({
@@ -71,6 +74,12 @@ export default function Marks() {
     fetchSubjects();
     fetchResults();
   }, []);
+
+  useEffect(() => {
+    if (defaultAcademicYear && !formData.academicYear) {
+      setFormData((prev) => ({ ...prev, academicYear: defaultAcademicYear }));
+    }
+  }, [defaultAcademicYear]);
 
   const fetchExams = async () => {
     try {
@@ -134,24 +143,20 @@ export default function Marks() {
       return;
     }
 
-    if (!formData.academicYear.trim()) {
-      toast.error("Academic year is required");
-      return;
-    }
-
-    if (!formData.examDate) {
-      toast.error("Exam date is required");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      const newExam = await examService.create(formData);
+      const payload: ExamData = {
+        name: formData.name,
+        classId: formData.classId,
+        ...(formData.academicYear ? { academicYear: formData.academicYear } : {}),
+        ...(formData.examDate ? { examDate: formData.examDate } : {}),
+      };
+      const newExam = await examService.create(payload);
       setExams((prev) => [...prev, newExam]);
       toast.success("Exam created successfully!");
       setDialogOpen(false);
-      setFormData({ name: "", classId: "", academicYear: "", examDate: "" });
+      setFormData({ name: "", classId: "", academicYear: defaultAcademicYear, examDate: "" });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to create exam";
       toast.error(errorMessage);
@@ -436,17 +441,27 @@ export default function Marks() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="academicYear">Academic Year *</Label>
-                <Input
-                  id="academicYear"
-                  placeholder="e.g., 2025-2026"
-                  value={formData.academicYear}
-                  onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
+                <Label htmlFor="academicYear">Academic Year</Label>
+                <Select
+                  value={formData.academicYear || defaultAcademicYear}
+                  onValueChange={(value) => setFormData({ ...formData, academicYear: value })}
                   disabled={isSubmitting}
-                />
+                >
+                  <SelectTrigger id="academicYear">
+                    <SelectValue placeholder="Current year (default)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {academicYears.map((ay) => (
+                      <SelectItem key={ay.id} value={ay.name ?? ay.id}>
+                        {ay.name ?? ay.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">Leave default for current year</p>
               </div>
               <div>
-                <Label htmlFor="examDate">Exam Date *</Label>
+                <Label htmlFor="examDate">Exam Date</Label>
                 <Input
                   id="examDate"
                   type="date"

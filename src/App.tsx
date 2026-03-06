@@ -23,6 +23,8 @@ import Homework from "./pages/admin/Homework";
 import Announcements from "./pages/admin/Announcements";
 import Fees from "./pages/admin/Fees";
 import UserManagement from "./pages/admin/UserManagement";
+import AuditLogs from "./pages/admin/AuditLogs";
+import AcademicYears from "./pages/admin/AcademicYears";
 import ClassTeacherLayout from "./components/ClassTeacherLayout";
 import ClassTeacherDashboard from "./pages/class-teacher/Dashboard";
 import StudentList from "./pages/class-teacher/StudentList";
@@ -72,6 +74,7 @@ const App = () => (
           {/* Super Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute allowedRoles={["school_admin", "admin"]}><SuperAdminLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
+            <Route path="academic-years" element={<AcademicYears />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="students" element={<Students />} />
             <Route path="classes" element={<Classes />} />
@@ -86,6 +89,7 @@ const App = () => (
             <Route path="homework" element={<Homework />} />
             <Route path="announcements" element={<Announcements />} />
             <Route path="fees" element={<Fees />} />
+            <Route path="audit-logs" element={<AuditLogs />} />
           </Route>
 
           {/* Class Teacher Routes */}

@@ -121,6 +121,30 @@ export const resultService = {
     return normalizeResult(response);
   },
 
+  /** Get results for a student. Use examId for one exam, or academicYear for full year. */
+  getByStudent: async (
+    studentId: string,
+    params?: { examId?: string; academicYear?: string }
+  ): Promise<Result[]> => {
+    const search = new URLSearchParams();
+    if (params?.examId) search.set("examId", params.examId);
+    if (params?.academicYear) search.set("academicYear", params.academicYear);
+    const query = search.toString() ? `?${search.toString()}` : "";
+    const response = await apiClient.get<ResultsListResponse>(
+      `${API_ENDPOINTS.results.byStudent(studentId)}${query}`
+    );
+    const resultsArray = extractResultsArray(response);
+    return resultsArray
+      .map((item) => {
+        try {
+          return normalizeResult(item);
+        } catch {
+          return null;
+        }
+      })
+      .filter((item): item is Result => item !== null);
+  },
+
   create: async (data: ResultData): Promise<Result> => {
     const response = await apiClient.post<ResultApiResponse>(API_ENDPOINTS.results.base, data);
     return normalizeResult(response);

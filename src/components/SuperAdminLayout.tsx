@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAcademicYear } from "@/hooks/useAcademicYear";
+import AcademicYearBanner from "@/components/AcademicYearBanner";
 import {
   LayoutDashboard,
   Users,
@@ -8,6 +10,7 @@ import {
   UserCog,
   Link2,
   CalendarCheck,
+  CalendarRange,
   FileText,
   TrendingUp,
   FolderOpen,
@@ -20,9 +23,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { logout } from "@/services/authService";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+  { icon: CalendarRange, label: "Academic Year", path: "/admin/academic-years" },
   { icon: Users, label: "User Management", path: "/admin/users" },
   { icon: Users, label: "Students", path: "/admin/students" },
   { icon: BookOpen, label: "Classes & Sections", path: "/admin/classes" },
@@ -37,15 +42,16 @@ const menuItems = [
   { icon: ClipboardList, label: "Homework", path: "/admin/homework" },
   { icon: Megaphone, label: "Announcements", path: "/admin/announcements" },
   { icon: DollarSign, label: "Fees Analytics", path: "/admin/fees" },
+  { icon: FileText, label: "Audit Logs", path: "/admin/audit-logs" },
 ];
 
 export default function SuperAdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  const { current, loading } = useAcademicYear({ fetchListOnMount: false });
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("user");
-    sessionStorage.removeItem("token");
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -112,6 +118,7 @@ export default function SuperAdminLayout() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
+        {!loading && <AcademicYearBanner noCurrentYear={!current} />}
         <Outlet />
       </main>
     </div>

@@ -20,6 +20,7 @@ import {
   Download,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { logout } from "@/services/authService";
 
 const navItems = [
   { label: "Dashboard", path: "/student", icon: Home },
@@ -90,9 +91,8 @@ const StudentParentLayout = () => {
     setDeferredPrompt(null);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("user");
-    sessionStorage.removeItem("token");
+  const handleLogout = async () => {
+    await logout();
     toast.success("Logged out successfully");
     navigate("/login");
   };
