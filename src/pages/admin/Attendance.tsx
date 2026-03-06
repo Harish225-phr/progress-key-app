@@ -281,18 +281,18 @@ export default function AttendancePage() {
                 <TableHead>Overall %</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {mockAttendance.map((record) => (
+<TableBody>
+              {attendanceRecords.map((record) => (
                 <TableRow key={record.id}>
-                  <TableCell className="font-medium">{record.name}</TableCell>
-                  <TableCell>{record.class}</TableCell>
+                  <TableCell className="font-medium">{getStudentName(record)}</TableCell>
+                  <TableCell>{getClassName(record)} - {getSectionName(record)}</TableCell>
                   <TableCell>{record.date}</TableCell>
                   <TableCell>
                     <Badge variant={record.status === "Present" ? "default" : "destructive"}>
                       {record.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{record.percentage}</TableCell>
+                  <TableCell>-</TableCell>
                 </TableRow>
               ))}
             </TableBody>
