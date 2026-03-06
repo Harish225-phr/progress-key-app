@@ -48,7 +48,7 @@ export default function ClassTeachers() {
     sectionId: "",
     academicYear: "",
   });
-  const [filterAcademicYear, setFilterAcademicYear] = useState<string>("");
+const [filterAcademicYear, setFilterAcademicYear] = useState<string>("");
   const [filterClassId, setFilterClassId] = useState<string>("");
 
   useEffect(() => {
@@ -70,13 +70,19 @@ export default function ClassTeachers() {
     }
   }, [formData.classId]);
 
-  const fetchData = async () => {
+const fetchData = async () => {
     try {
+      // Build filter params, excluding "all" values
+      const filterParams: Record<string, string> = {};
+      if (filterAcademicYear && filterAcademicYear !== "all") {
+        filterParams.academicYear = filterAcademicYear;
+      }
+      if (filterClassId && filterClassId !== "all") {
+        filterParams.classId = filterClassId;
+      }
+
       const [assignmentsData, usersData, classesData] = await Promise.all([
-        classTeacherService.getAll({
-          ...(filterAcademicYear ? { academicYear: filterAcademicYear } : {}),
-          ...(filterClassId ? { classId: filterClassId } : {}),
-        }),
+        classTeacherService.getAll(Object.keys(filterParams).length > 0 ? filterParams : undefined),
         userService.getAll(),
         getClasses(),
       ]);
@@ -268,8 +274,8 @@ export default function ClassTeachers() {
                   </SelectTrigger>
                   <SelectContent>
                     {academicYears.map((ay) => (
-                      <SelectItem key={ay.id} value={ay.name ?? ay.id}>
-                        {ay.name ?? ay.id}
+                      <SelectItem key={ay.id} value={ay.name || ay.id}>
+                        {ay.name || ay.id}
                       </SelectItem>
                     ))}
                     {academicYears.length === 0 && (
@@ -302,15 +308,15 @@ export default function ClassTeachers() {
           <div className="flex flex-wrap gap-4 pt-2">
             <div className="space-y-1">
               <Label>Academic Year</Label>
-              <Select value={filterAcademicYear} onValueChange={setFilterAcademicYear}>
+<Select value={filterAcademicYear} onValueChange={setFilterAcademicYear}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All years" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All years</SelectItem>
+<SelectItem value="all">All years</SelectItem>
                   {academicYears.map((ay) => (
-                    <SelectItem key={ay.id} value={ay.name ?? ay.id}>
-                      {ay.name ?? ay.id}
+                    <SelectItem key={ay.id} value={ay.name || ay.id}>
+                      {ay.name || ay.id}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -318,12 +324,12 @@ export default function ClassTeachers() {
             </div>
             <div className="space-y-1">
               <Label>Class</Label>
-              <Select value={filterClassId} onValueChange={setFilterClassId}>
+<Select value={filterClassId} onValueChange={setFilterClassId}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All classes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All classes</SelectItem>
+<SelectItem value="all">All classes</SelectItem>
                   {classes.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}

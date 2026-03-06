@@ -452,8 +452,8 @@ export default function Marks() {
                   </SelectTrigger>
                   <SelectContent>
                     {academicYears.map((ay) => (
-                      <SelectItem key={ay.id} value={ay.name ?? ay.id}>
-                        {ay.name ?? ay.id}
+                      <SelectItem key={ay.id} value={ay.name || ay.id}>
+                        {ay.name || ay.id}
                       </SelectItem>
                     ))}
                   </SelectContent>

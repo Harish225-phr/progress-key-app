@@ -108,7 +108,7 @@ export default function Fees() {
             <div className="space-y-2">
               <Label>Academic Year</Label>
               <Select
-                value={selectedAcademicYear || (currentYear?.name ?? currentYear?.id ?? "")}
+                value={selectedAcademicYear || currentYear?.name || currentYear?.id || ""}
                 onValueChange={setSelectedAcademicYear}
               >
                 <SelectTrigger>
@@ -116,8 +116,8 @@ export default function Fees() {
                 </SelectTrigger>
                 <SelectContent>
                   {academicYears.map((ay) => (
-                    <SelectItem key={ay.id} value={ay.name ?? ay.id}>
-                      {ay.name ?? ay.id}
+                    <SelectItem key={ay.id} value={ay.name || ay.id}>
+                      {ay.name || ay.id}
                     </SelectItem>
                   ))}
                 </SelectContent>
