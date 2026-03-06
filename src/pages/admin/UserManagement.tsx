@@ -46,7 +46,9 @@ import { getErrorMessage } from "@/api/errors";
 const ROLES = [
   { value: "admin", label: "Super Admin", icon: Shield, color: "bg-primary/10 text-primary" },
   { value: "teacher", label: "Teacher", icon: BookOpen, color: "bg-accent/10 text-accent" },
-  { value: "student", label: "Student / Parent", icon: GraduationCap, color: "bg-warning/10 text-warning" },
+  { value: "parent", label: "Parent ", icon: GraduationCap, color: "bg-warning/10 text-warning" },
+  { value: "student", label: "Student ", icon: GraduationCap, color: "bg-warning/10 text-warning" },
+
 ];
 
 const getRoleBadge = (role: string) => {
