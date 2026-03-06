@@ -1,5 +1,6 @@
 import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
+import { getCached, setCached, clearCache } from "./cache";
 
 interface ClassData {
   name: string;
@@ -115,16 +116,32 @@ const normalizeClass = (item: ClassApiResponse): ClassResponse => {
   };
 };
 
+// Cache key constants
+const CACHE_KEYS = {
+  ALL_CLASSES: "classes:all",
+  ALL_SECTIONS: "sections:all",
+  SECTIONS_BY_CLASS: (classId: string) => `sections:class:${classId}`,
+} as const;
+
 // Add a new class
 export const addClass = async (classData: ClassData): Promise<ClassResponse> => {
   const response = await apiClient.post<ClassApiResponse>(API_ENDPOINTS.classes.base, classData);
-  return normalizeClass(response);
+  const cls = normalizeClass(response);
+  // Clear cache since class list changed
+  clearCache(CACHE_KEYS.ALL_CLASSES);
+  return cls;
 };
 
-// Get all classes
+// Get all classes (with caching)
 export const getClasses = async (): Promise<ClassResponse[]> => {
+  // Check cache first
+  const cached = getCached<ClassResponse[]>(CACHE_KEYS.ALL_CLASSES);
+  if (cached) {
+    return cached;
+  }
+
   const response = await apiClient.get<ClassApiResponse[]>(API_ENDPOINTS.classes.base);
-  return response
+  const classes = response
     .map((item) => {
       try {
         return normalizeClass(item);
@@ -133,6 +150,10 @@ export const getClasses = async (): Promise<ClassResponse[]> => {
       }
     })
     .filter((item): item is ClassResponse => item !== null);
+
+  // Cache the result
+  setCached(CACHE_KEYS.ALL_CLASSES, classes);
+  return classes;
 };
 
 // Get class by ID
@@ -141,28 +162,42 @@ export const getClassById = async (classId: string): Promise<ClassResponse> => {
   return normalizeClass(response);
 };
 
-// Update class
+// Update class (clears cache)
 export const updateClass = async (classId: string, classData: Partial<ClassData>): Promise<ClassResponse> => {
   const response = await apiClient.patch<ClassApiResponse>(API_ENDPOINTS.classes.byId(classId), classData);
-  return normalizeClass(response);
+  const cls = normalizeClass(response);
+  // Clear cache since class list changed
+  clearCache(CACHE_KEYS.ALL_CLASSES);
+  return cls;
 };
 
-// Delete class
+// Delete class (clears cache)
 export const deleteClass = async (classId: string): Promise<void> => {
   await apiClient.delete<void>(API_ENDPOINTS.classes.byId(classId));
+  // Clear cache since class list changed
+  clearCache(CACHE_KEYS.ALL_CLASSES);
 };
 
-// Add a new section
+// Add a new section (clears cache)
 export const addSection = async (sectionData: SectionData): Promise<SectionResponse> => {
   const response = await apiClient.post<SectionApiResponse>(API_ENDPOINTS.sections.base, sectionData);
-  return normalizeSection(response);
+  const section = normalizeSection(response);
+  // Clear cache since sections changed
+  clearCache(CACHE_KEYS.ALL_SECTIONS);
+  return section;
 };
 
-// Get all sections
+// Get all sections (with caching)
 export const getSections = async (): Promise<SectionResponse[]> => {
+  // Check cache first
+  const cached = getCached<SectionResponse[]>(CACHE_KEYS.ALL_SECTIONS);
+  if (cached) {
+    return cached;
+  }
+
   const response = await apiClient.get<SectionsListResponse>(API_ENDPOINTS.sections.base);
   const sectionsArray = extractSectionsArray(response);
-  return sectionsArray
+  const sections = sectionsArray
     .map((item) => {
       try {
         return normalizeSection(item);
@@ -171,13 +206,25 @@ export const getSections = async (): Promise<SectionResponse[]> => {
       }
     })
     .filter((item): item is SectionResponse => item !== null);
+
+  // Cache the result
+  setCached(CACHE_KEYS.ALL_SECTIONS, sections);
+  return sections;
 };
 
-// Get sections by class ID
+// Get sections by class ID (with caching)
 export const getSectionsByClassId = async (classId: string): Promise<SectionResponse[]> => {
+  const cacheKey = CACHE_KEYS.SECTIONS_BY_CLASS(classId);
+  
+  // Check cache first
+  const cached = getCached<SectionResponse[]>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const response = await apiClient.get<SectionsListResponse>(API_ENDPOINTS.sections.byClassId(classId));
   const sectionsArray = extractSectionsArray(response);
-  return sectionsArray
+  const sections = sectionsArray
     .map((item) => {
       try {
         return normalizeSection(item);
@@ -186,15 +233,36 @@ export const getSectionsByClassId = async (classId: string): Promise<SectionResp
       }
     })
     .filter((item): item is SectionResponse => item !== null);
+
+  // Cache the result
+  setCached(cacheKey, sections);
+  return sections;
 };
 
-// Update section
+// Update section (clears cache)
 export const updateSection = async (sectionId: string, sectionData: Partial<SectionData>): Promise<SectionResponse> => {
   const response = await apiClient.patch<SectionApiResponse>(API_ENDPOINTS.sections.byId(sectionId), sectionData);
-  return normalizeSection(response);
+  const section = normalizeSection(response);
+  // Clear cache since sections changed
+  clearCache(CACHE_KEYS.ALL_SECTIONS);
+  return section;
 };
 
-// Delete section
+// Delete section (clears cache)
 export const deleteSection = async (sectionId: string): Promise<void> => {
   await apiClient.delete<void>(API_ENDPOINTS.sections.byId(sectionId));
+  // Clear cache since sections changed
+  clearCache(CACHE_KEYS.ALL_SECTIONS);
+};
+
+// Force refresh classes cache
+export const refreshClassesCache = async (): Promise<ClassResponse[]> => {
+  clearCache(CACHE_KEYS.ALL_CLASSES);
+  return getClasses();
+};
+
+// Force refresh sections cache
+export const refreshSectionsCache = async (): Promise<SectionResponse[]> => {
+  clearCache(CACHE_KEYS.ALL_SECTIONS);
+  return getSections();
 };
