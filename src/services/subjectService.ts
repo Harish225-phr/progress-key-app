@@ -3,13 +3,21 @@ import { API_ENDPOINTS } from "@/api/endpoints";
 
 export interface SubjectData {
   name: string;
-  classId: string;
+  code?: string;
+  type?: string;
+  description?: string;
+  credits?: number;
+  classId?: string;
 }
 
 export interface Subject {
   id: string;
   name: string;
-  classId: string;
+  code?: string;
+  type?: string;
+  description?: string;
+  credits?: number;
+  classId?: string;
   className?: string;
   createdAt?: string;
 }
@@ -24,6 +32,10 @@ type SubjectApiResponse = {
   id?: string;
   _id?: string;
   name?: string;
+  code?: string;
+  type?: string;
+  description?: string;
+  credits?: number;
   classId?: PopulatedRef;
   createdAt?: string;
   updatedAt?: string;
@@ -55,6 +67,10 @@ const normalizeSubject = (item: SubjectApiResponse): Subject => {
   return {
     id: String(normalizedId),
     name: item.name ?? "",
+    code: item.code,
+    type: item.type,
+    description: item.description,
+    credits: item.credits,
     classId: extractIdFromRef(item.classId),
     className: extractNameFromRef(item.classId),
     createdAt: item.createdAt,

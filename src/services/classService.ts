@@ -4,11 +4,13 @@ import { getCached, setCached, clearCache } from "./cache";
 
 interface ClassData {
   name: string;
+  schoolId?: string;
 }
 
 interface ClassResponse {
   id: string;
   name: string;
+  schoolId?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -18,6 +20,7 @@ type ClassApiResponse = {
   _id?: string;
   classId?: string;
   name?: string;
+  schoolId?: string;
   createdAt?: string;
   created_at?: string;
   updatedAt?: string;
@@ -27,7 +30,10 @@ type ClassApiResponse = {
 interface SectionData {
   name: string;
   classId: string;
-  classTeacher: string;
+  capacity?: number;
+  roomNumber?: string;
+  floor?: string;
+  building?: string;
 }
 
 export interface SectionResponse {
@@ -35,8 +41,10 @@ export interface SectionResponse {
   name: string;
   classId: string;
   className?: string;
-  classTeacher: string;
-  classTeacherName?: string;
+  capacity?: number;
+  roomNumber?: string;
+  floor?: string;
+  building?: string;
   createdAt?: string;
 }
 
@@ -52,7 +60,10 @@ type SectionApiResponse = {
   _id?: string;
   name?: string;
   classId?: PopulatedRef;
-  classTeacher?: PopulatedRef;
+  capacity?: number;
+  roomNumber?: string;
+  floor?: string;
+  building?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -85,8 +96,10 @@ const normalizeSection = (item: SectionApiResponse): SectionResponse => {
     name: item.name ?? "",
     classId: extractIdFromRef(item.classId),
     className: extractNameFromRef(item.classId),
-    classTeacher: extractIdFromRef(item.classTeacher),
-    classTeacherName: extractNameFromRef(item.classTeacher),
+    capacity: item.capacity,
+    roomNumber: item.roomNumber,
+    floor: item.floor,
+    building: item.building,
     createdAt: item.createdAt,
   };
 };
@@ -111,6 +124,7 @@ const normalizeClass = (item: ClassApiResponse): ClassResponse => {
   return {
     id: String(normalizedId),
     name: item.name ?? "",
+    schoolId: item.schoolId,
     createdAt: item.createdAt ?? item.created_at,
     updatedAt: item.updatedAt ?? item.updated_at,
   };

@@ -32,7 +32,6 @@ import { toast } from "sonner";
 import { useClasses } from "@/hooks/useClasses";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { addSection, getSections, deleteSection, type SectionResponse } from "@/services/classService";
-import { userService, type User } from "@/services/userService";
 
 export default function Classes() {
   const { classes, loading, error, addClass, deleteClass, fetchClasses, clearError } = useClasses();
@@ -42,10 +41,11 @@ export default function Classes() {
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
   const [className, setClassName] = useState("");
   const [selectedSectionClassId, setSelectedSectionClassId] = useState("");
-  const [teachers, setTeachers] = useState<User[]>([]);
-  const [teachersLoading, setTeachersLoading] = useState(false);
   const [sectionName, setSectionName] = useState("");
-  const [sectionClassTeacher, setSectionClassTeacher] = useState("");
+  const [sectionCapacity, setSectionCapacity] = useState("");
+  const [sectionRoomNumber, setSectionRoomNumber] = useState("");
+  const [sectionFloor, setSectionFloor] = useState("");
+  const [sectionBuilding, setSectionBuilding] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSectionSubmitting, setIsSectionSubmitting] = useState(false);
 
@@ -71,25 +71,6 @@ export default function Classes() {
     fetchSections();
   }, []);
 
-  useEffect(() => {
-    const fetchTeachers = async () => {
-      setTeachersLoading(true);
-      try {
-        const users = await userService.getAll();
-        const teacherUsers = users.filter((user) => {
-          const normalizedRole = String(user.role ?? "").toUpperCase();
-          return normalizedRole.includes("TEACHER");
-        });
-        setTeachers(teacherUsers);
-      } catch {
-        toast.error("Failed to fetch teachers");
-      } finally {
-        setTeachersLoading(false);
-      }
-    };
-
-    fetchTeachers();
-  }, []);
 
   // Validate class name
   const validateClassName = (name: string): boolean => {
@@ -119,7 +100,9 @@ export default function Classes() {
     setIsSubmitting(true);
 
     try {
-      const result = await addClass({ name: className.trim() });
+      const result = await addClass({ 
+        name: className.trim()
+      });
 
       if (result) {
         toast.success("Class added successfully!");
@@ -158,25 +141,26 @@ export default function Classes() {
       return;
     }
 
-    if (!sectionClassTeacher) {
-      toast.error("Class teacher is required");
-      return;
-    }
-
     setIsSectionSubmitting(true);
 
     try {
       const createdSection = await addSection({
         name: sectionName.trim(),
         classId: selectedSectionClassId,
-        classTeacher: sectionClassTeacher,
+        capacity: sectionCapacity ? parseInt(sectionCapacity) : undefined,
+        roomNumber: sectionRoomNumber.trim() || undefined,
+        floor: sectionFloor.trim() || undefined,
+        building: sectionBuilding.trim() || undefined,
       });
 
       setSections((prevSections) => [...prevSections, createdSection]);
 
       toast.success("Section added successfully!");
       setSectionName("");
-      setSectionClassTeacher("");
+      setSectionCapacity("");
+      setSectionRoomNumber("");
+      setSectionFloor("");
+      setSectionBuilding("");
       setSelectedSectionClassId("");
       setSectionDialogOpen(false);
     } catch (err) {
@@ -205,11 +189,6 @@ export default function Classes() {
     return cls?.name ?? section.classId;
   };
 
-  const getTeacherName = (section: SectionResponse) => {
-    if (section.classTeacherName) return section.classTeacherName;
-    const teacher = teachers.find((t) => String(t.id) === section.classTeacher);
-    return teacher?.name ?? section.classTeacher;
-  };
 
   return (
     <div className="p-6 space-y-6">
@@ -255,7 +234,7 @@ export default function Classes() {
                     <Label htmlFor="className">Class Name *</Label>
                     <Input
                       id="className"
-                      placeholder="e.g., Class 10"
+                      placeholder="e.g., 10th Grade"
                       value={className}
                       onChange={(e) => setClassName(e.target.value)}
                       disabled={isSubmitting}
@@ -376,7 +355,7 @@ export default function Classes() {
                     <Label htmlFor="sectionName">Section Name *</Label>
                     <Input
                       id="sectionName"
-                      placeholder="e.g., Section C"
+                      placeholder="e.g., A, B, C"
                       value={sectionName}
                       onChange={(e) => setSectionName(e.target.value)}
                       disabled={isSectionSubmitting}
@@ -384,31 +363,50 @@ export default function Classes() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="classTeacher">Class Teacher *</Label>
-                    <Select
-                      value={sectionClassTeacher}
-                      onValueChange={setSectionClassTeacher}
-                      disabled={isSectionSubmitting || teachersLoading || teachers.length === 0}
-                    >
-                      <SelectTrigger id="classTeacher">
-                        <SelectValue
-                          placeholder={
-                            teachersLoading
-                              ? "Loading teachers..."
-                              : teachers.length === 0
-                                ? "No teachers available"
-                                : "Select class teacher"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {teachers.map((teacher) => (
-                          <SelectItem key={String(teacher.id)} value={String(teacher.id)}>
-                            {teacher.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="sectionCapacity">Capacity</Label>
+                    <Input
+                      id="sectionCapacity"
+                      type="number"
+                      placeholder="e.g., 40 (default: 40)"
+                      value={sectionCapacity}
+                      onChange={(e) => setSectionCapacity(e.target.value)}
+                      disabled={isSectionSubmitting}
+                      min="1"
+                      max="200"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="sectionRoomNumber">Room Number</Label>
+                    <Input
+                      id="sectionRoomNumber"
+                      placeholder="e.g., 101, A-201"
+                      value={sectionRoomNumber}
+                      onChange={(e) => setSectionRoomNumber(e.target.value)}
+                      disabled={isSectionSubmitting}
+                      maxLength={20}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="sectionFloor">Floor</Label>
+                    <Input
+                      id="sectionFloor"
+                      placeholder="e.g., Ground Floor, First Floor"
+                      value={sectionFloor}
+                      onChange={(e) => setSectionFloor(e.target.value)}
+                      disabled={isSectionSubmitting}
+                      maxLength={30}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="sectionBuilding">Building</Label>
+                    <Input
+                      id="sectionBuilding"
+                      placeholder="e.g., Main Building, Science Block"
+                      value={sectionBuilding}
+                      onChange={(e) => setSectionBuilding(e.target.value)}
+                      disabled={isSectionSubmitting}
+                      maxLength={30}
+                    />
                   </div>
                   <Button
                     type="submit"
@@ -416,10 +414,8 @@ export default function Classes() {
                     disabled={
                       isSectionSubmitting ||
                       classes.length === 0 ||
-                      teachers.length === 0 ||
                       !selectedSectionClassId ||
-                      !sectionName.trim() ||
-                      !sectionClassTeacher
+                      !sectionName.trim()
                     }
                   >
                     {isSectionSubmitting ? (
@@ -450,7 +446,9 @@ export default function Classes() {
                   <TableRow>
                     <TableHead>Class</TableHead>
                     <TableHead>Section Name</TableHead>
-                    <TableHead>Class Teacher</TableHead>
+                    <TableHead>Capacity</TableHead>
+                    <TableHead>Room</TableHead>
+                    <TableHead>Building</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -459,7 +457,9 @@ export default function Classes() {
                     <TableRow key={section.id}>
                       <TableCell className="font-medium">{getClassName(section)}</TableCell>
                       <TableCell>{section.name}</TableCell>
-                      <TableCell>{getTeacherName(section)}</TableCell>
+                      <TableCell>{section.capacity || "-"}</TableCell>
+                      <TableCell>{section.roomNumber || "-"}</TableCell>
+                      <TableCell>{section.building || "-"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button

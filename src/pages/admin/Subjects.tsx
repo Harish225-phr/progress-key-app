@@ -36,8 +36,12 @@ export default function Subjects() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
-  const [formData, setFormData] = useState<SubjectData>({
+  const [formData, setFormData] = useState<Omit<SubjectData, 'credits'> & { credits?: string }>({
     name: "",
+    code: "",
+    type: "",
+    description: "",
+    credits: "",
     classId: "",
   });
 
@@ -74,22 +78,28 @@ export default function Subjects() {
       return;
     }
 
-    if (!formData.classId) {
-      toast.error("Please select a class");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
       const newSubject = await subjectService.create({
         name: formData.name.trim(),
+        code: formData.code?.trim() || undefined,
+        type: formData.type?.trim() || undefined,
+        description: formData.description?.trim() || undefined,
+        credits: formData.credits ? parseInt(formData.credits) : undefined,
         classId: formData.classId,
       });
       setSubjects((prev) => [...prev, newSubject]);
       toast.success("Subject added successfully!");
       setDialogOpen(false);
-      setFormData({ name: "", classId: "" });
+      setFormData({ 
+        name: "", 
+        code: "",
+        type: "",
+        description: "",
+        credits: "",
+        classId: "" 
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to add subject";
       toast.error(errorMessage);
@@ -143,19 +153,78 @@ export default function Subjects() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   disabled={isSubmitting}
+                  maxLength={50}
+                  required
                 />
               </div>
               <div>
-                <Label htmlFor="classId">Class *</Label>
+                <Label htmlFor="subjectCode">Subject Code</Label>
+                <Input
+                  id="subjectCode"
+                  placeholder="e.g., MATH101"
+                  value={formData.code || ""}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                  disabled={isSubmitting}
+                  maxLength={20}
+                />
+              </div>
+              <div>
+                <Label htmlFor="subjectType">Type</Label>
+                <Select
+                  value={formData.type || ""}
+                  onValueChange={(value) => setFormData({ ...formData, type: value })}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger id="subjectType">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Core">Core</SelectItem>
+                    <SelectItem value="Elective">Elective</SelectItem>
+                    <SelectItem value="Optional">Optional</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="subjectCredits">Credits</Label>
+                <Input
+                  id="subjectCredits"
+                  type="number"
+                  placeholder="e.g., 5"
+                  value={formData.credits || ""}
+                  onChange={(e) => setFormData({ ...formData, credits: e.target.value })}
+                  disabled={isSubmitting}
+                  min="1"
+                  max="10"
+                />
+              </div>
+              <div>
+                <Label htmlFor="subjectDescription">Description</Label>
+                <textarea
+                  id="subjectDescription"
+                  className="w-full p-2 border rounded-md resize-none h-20"
+                  placeholder="Enter subject description..."
+                  value={formData.description || ""}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  disabled={isSubmitting}
+                  maxLength={200}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formData.description?.length || 0}/200 characters
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="classId">Class</Label>
                 <Select
                   value={formData.classId}
                   onValueChange={(value) => setFormData({ ...formData, classId: value })}
                   disabled={isSubmitting}
                 >
                   <SelectTrigger id="classId">
-                    <SelectValue placeholder="Select class" />
+                    <SelectValue placeholder="Select class (optional)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">No specific class</SelectItem>
                     {classes.map((cls) => (
                       <SelectItem key={cls.id} value={cls.id}>
                         {cls.name}
@@ -164,7 +233,11 @@ export default function Subjects() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isSubmitting || !formData.name.trim()}
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -197,6 +270,9 @@ export default function Subjects() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Subject Name</TableHead>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Credits</TableHead>
                   <TableHead>Class</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -205,6 +281,19 @@ export default function Subjects() {
                 {subjects.map((subject) => (
                   <TableRow key={subject.id}>
                     <TableCell className="font-medium">{subject.name}</TableCell>
+                    <TableCell>{subject.code || "-"}</TableCell>
+                    <TableCell>
+                      {subject.type && (
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          subject.type === 'Core' ? 'bg-blue-100 text-blue-800' :
+                          subject.type === 'Elective' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {subject.type}
+                        </span>
+                      ) || "-"}
+                    </TableCell>
+                    <TableCell>{subject.credits || "-"}</TableCell>
                     <TableCell>{getClassName(subject)}</TableCell>
                     <TableCell>
                       <Button
