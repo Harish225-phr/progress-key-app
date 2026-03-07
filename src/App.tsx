@@ -11,6 +11,7 @@ import SuperAdminLayout from "./components/SuperAdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Students from "./pages/admin/Students";
 import StudentAdmission from "./pages/admin/StudentAdmission";
+import AttendanceMarking from "./pages/admin/AttendanceMarking";
 import Classes from "./pages/admin/Classes";
 import Subjects from "./pages/admin/Subjects";
 import Teachers from "./pages/admin/Teachers";
@@ -79,12 +80,13 @@ const App = () => (
             <Route path="users" element={<UserManagement />} />
             <Route path="students" element={<Students />} />
             <Route path="students/admission" element={<StudentAdmission />} />
+            <Route path="attendance/marking" element={<AttendanceMarking />} />
+            <Route path="attendance" element={<Attendance />} />
             <Route path="classes" element={<Classes />} />
             <Route path="subjects" element={<Subjects />} />
             <Route path="teachers" element={<Teachers />} />
             <Route path="mapping" element={<Mapping />} />
             <Route path="class-teachers" element={<ClassTeachers />} />
-            <Route path="attendance" element={<Attendance />} />
             <Route path="marks" element={<Marks />} />
             <Route path="behaviour" element={<Behaviour />} />
             <Route path="materials" element={<Materials />} />

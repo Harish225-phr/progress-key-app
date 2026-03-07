@@ -31,6 +31,7 @@ export default function StudentList() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [apiSource, setApiSource] = useState<"admissions" | "admission">("admissions");
   const [filters, setFilters] = useState({
     academicYearId: "",
     classId: "",
@@ -46,7 +47,7 @@ export default function StudentList() {
       try {
         const [classesData, academicYearsData] = await Promise.all([
           getClasses(),
-          academicYearService.getAll(),
+          academicYearService.getList(),
         ]);
 
         setClasses(classesData.map((c) => ({ id: c.id, name: c.name })));
@@ -79,7 +80,7 @@ export default function StudentList() {
 
   useEffect(() => {
     fetchStudents();
-  }, [filters]);
+  }, [filters, apiSource]);
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -90,7 +91,16 @@ export default function StudentList() {
         sectionId: filters.sectionId || undefined,
       };
 
-      const studentsData = await studentService.getAll(activeFilters);
+      let studentsData: Student[];
+      
+      if (apiSource === "admission") {
+        // Use admission API
+        studentsData = await studentService.getAllFromAdmission(activeFilters);
+      } else {
+        // Use admissions API (default)
+        studentsData = await studentService.getAll(activeFilters);
+      }
+      
       setStudents(studentsData);
     } catch (error) {
       toast.error("Failed to fetch students");
@@ -155,8 +165,21 @@ export default function StudentList() {
           <h1 className="text-3xl font-bold">Student Management</h1>
           <p className="text-muted-foreground">Manage student admissions and records</p>
         </div>
-        <Button onClick={() => navigate("/admin/students/admission")}>
-          <Plus className="h-4 w-4 mr-2" />
+        <div className="flex gap-2">
+          <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-md">
+            <Label htmlFor="apiSource" className="text-sm font-medium">Data Source:</Label>
+            <Select value={apiSource} onValueChange={(value: "admissions" | "admission") => setApiSource(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admissions">Admissions API</SelectItem>
+                <SelectItem value="admission">Admission API</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={() => navigate("/admin/students/admission")}>
+            <Plus className="h-4 w-4 mr-2" />
           Admit Student
         </Button>
       </div>

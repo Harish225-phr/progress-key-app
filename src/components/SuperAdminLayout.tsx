@@ -49,12 +49,20 @@ const menuItems = [
       { icon: Users, label: "Student List", path: "/admin/students" },
     ]
   },
+  { 
+    icon: CalendarCheck, 
+    label: "Attendance Management", 
+    path: "/admin/attendance",
+    children: [
+      { icon: CalendarCheck, label: "Mark Attendance", path: "/admin/attendance/marking" },
+      { icon: CalendarCheck, label: "Attendance Reports", path: "/admin/attendance" },
+    ]
+  },
   { icon: BookOpen, label: "Classes & Sections", path: "/admin/classes" },
   { icon: GraduationCap, label: "Subjects", path: "/admin/subjects" },
   { icon: UserCog, label: "Teachers", path: "/admin/teachers" },
   { icon: Link2, label: "Teacher Mapping", path: "/admin/mapping" },
   { icon: UserCog, label: "Class Teachers", path: "/admin/class-teachers" },
-  { icon: CalendarCheck, label: "Attendance Reports", path: "/admin/attendance" },
   { icon: FileText, label: "Test/Marks Reports", path: "/admin/marks" },
   { icon: TrendingUp, label: "Behaviour Reports", path: "/admin/behaviour" },
   { icon: FolderOpen, label: "Learning Materials", path: "/admin/materials" },

@@ -2,20 +2,34 @@ import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
 export interface StudentAdmissionData {
+  _id: string;
   firstName: string;
   lastName: string;
   admissionNumber: string;
   gender: "Male" | "Female" | "Other";
   dateOfBirth: string;
-  email?: string;
-  password?: string;
+  address?: string;
+  bloodGroup?: string;
+  admissionDate: string;
+  isActive: boolean;
+  parentUserId?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  userId?: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  schoolId: string;
   academicYearId?: string;
   classId?: string;
   sectionId?: string;
   rollNumber?: number;
-  parentUserId?: string;
-  address?: string;
-  bloodGroup?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Student {
@@ -184,26 +198,69 @@ export const studentService = {
     classId?: string;
     sectionId?: string;
   }): Promise<Student[]> => {
-    const queryParams = new URLSearchParams();
-    if (filters?.academicYearId) queryParams.append("academicYearId", filters.academicYearId);
-    if (filters?.classId) queryParams.append("classId", filters.classId);
-    if (filters?.sectionId) queryParams.append("sectionId", filters.sectionId);
-    
-    const endpoint = queryParams.toString() 
-      ? `${API_ENDPOINTS.students.base}?${queryParams.toString()}`
-      : API_ENDPOINTS.students.base;
-    
-    const response = await apiClient.get<StudentsListResponse>(endpoint);
-    const studentsArray = extractStudentsArray(response);
-    return studentsArray
-      .map((item) => {
-        try {
-          return normalizeStudent(item);
-        } catch {
-          return null;
-        }
-      })
-      .filter((item): item is Student => item !== null);
+    const queryParams = new URLSearchParams(
+      Object.fromEntries(Object.entries(filters || {}).filter(([_, v]) => v !== undefined))
+    );
+
+    try {
+      // Use admission API to get students
+      const response = await apiClient.get<{success: boolean; data: StudentAdmissionData[]; pagination: any}>(`admission?${queryParams}`);
+      return response.data.map(student => ({
+        id: student._id || '',
+        name: `${student.firstName} ${student.lastName}`,
+        email: student.userId?.email || '',
+        admissionNumber: student.admissionNumber,
+        dob: student.dateOfBirth,
+        gender: student.gender.toLowerCase() as "male" | "female" | "other",
+        parentId: student.parentUserId?._id || '',
+        parentName: student.parentUserId?.name || '',
+        academicYearId: student.academicYearId || '',
+        classId: student.classId || '',
+        sectionId: student.sectionId || '',
+        rollNumber: student.rollNumber || 0,
+        status: student.isActive ? 'active' : 'inactive' as const,
+        createdAt: student.createdAt,
+        updatedAt: student.updatedAt,
+      }));
+    } catch (error) {
+      console.error('Failed to fetch from admission API:', error);
+      throw new Error('Failed to fetch students from admission API');
+    }
+  },
+
+  // Get students only from admission API (fallback)
+  getAllFromAdmission: async (filters?: {
+    academicYearId?: string;
+    classId?: string;
+    sectionId?: string;
+  }): Promise<Student[]> => {
+    const queryParams = new URLSearchParams(
+      Object.fromEntries(Object.entries(filters || {}).filter(([_, v]) => v !== undefined))
+    );
+
+    try {
+      const response = await apiClient.get<{success: boolean; data: StudentAdmissionData[]; pagination: any}>(`admission?${queryParams}`);
+      return response.data.map(student => ({
+        id: student._id || '',
+        name: `${student.firstName} ${student.lastName}`,
+        email: student.userId?.email || '',
+        admissionNumber: student.admissionNumber,
+        dob: student.dateOfBirth,
+        gender: student.gender.toLowerCase() as "male" | "female" | "other",
+        parentId: student.parentUserId?._id || '',
+        parentName: student.parentUserId?.name || '',
+        academicYearId: student.academicYearId || '',
+        classId: student.classId || '',
+        sectionId: student.sectionId || '',
+        rollNumber: student.rollNumber || 0,
+        status: student.isActive ? 'active' : 'inactive' as const,
+        createdAt: student.createdAt,
+        updatedAt: student.updatedAt,
+      }));
+    } catch (error) {
+      console.error('Failed to fetch from admission API:', error);
+      throw new Error('Failed to fetch students from admission API');
+    }
   },
 
   // Get student by ID

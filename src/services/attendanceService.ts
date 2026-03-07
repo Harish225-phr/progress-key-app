@@ -1,43 +1,86 @@
 import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
-export type AttendanceStatus = "Present" | "Absent" | "Late" | "Excused";
+export type AttendanceStatus = "Present" | "Absent" | "Late" | "Leave" | "Excused";
 
 export interface AttendanceData {
+  enrollmentId: string;
   studentId: string;
+  academicYearId: string;
   classId: string;
   sectionId: string;
-  subjectId: string;
   date: string;
   status: AttendanceStatus;
 }
 
 export interface BulkAttendanceRecord {
+  enrollmentId: string;
   studentId: string;
   status: AttendanceStatus;
 }
 
 export interface BulkAttendanceData {
-  date: string;
+  academicYearId: string;
   classId: string;
   sectionId: string;
-  subjectId: string;
-  records: BulkAttendanceRecord[];
+  date: string;
+  attendanceRecords: BulkAttendanceRecord[];
+}
+
+export interface Enrollment {
+  _id: string;
+  studentId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    admissionNumber: string;
+  };
+  academicYearId: {
+    _id: string;
+    name: string;
+    isActive: boolean;
+  };
+  classId: {
+    _id: string;
+    name: string;
+  };
+  sectionId: {
+    _id: string;
+    name: string;
+  };
+  rollNumber?: number;
+  status: string;
 }
 
 export interface Attendance {
   id: string;
+  enrollmentId: string;
   studentId: string;
   studentName?: string;
+  admissionNumber?: string;
+  academicYearId: string;
+  academicYearName?: string;
   classId: string;
   className?: string;
   sectionId: string;
   sectionName?: string;
-  subjectId: string;
-  subjectName?: string;
+  rollNumber?: number;
   date: string;
   status: AttendanceStatus;
   createdAt?: string;
+}
+
+export interface AttendanceSummary {
+  totalStudents: number;
+  present: number;
+  absent: number;
+  leave: number;
+  late: number;
+  attendance: Array<{
+    enrollmentId: string;
+    studentId: string;
+    status: AttendanceStatus;
+  }>;
 }
 
 type PopulatedRef = {
@@ -51,10 +94,11 @@ type PopulatedRef = {
 type AttendanceApiResponse = {
   id?: string;
   _id?: string;
+  enrollmentId?: PopulatedRef;
   studentId?: PopulatedRef;
+  academicYearId?: PopulatedRef;
   classId?: PopulatedRef;
   sectionId?: PopulatedRef;
-  subjectId?: PopulatedRef;
   date?: string;
   status?: string;
   createdAt?: string;
@@ -89,14 +133,15 @@ const normalizeAttendance = (item: AttendanceApiResponse): Attendance => {
 
   return {
     id: String(normalizedId),
+    enrollmentId: extractIdFromRef(item.enrollmentId),
     studentId: extractIdFromRef(item.studentId),
     studentName: extractNameFromRef(item.studentId),
+    academicYearId: extractIdFromRef(item.academicYearId),
+    academicYearName: extractNameFromRef(item.academicYearId),
     classId: extractIdFromRef(item.classId),
     className: extractNameFromRef(item.classId),
     sectionId: extractIdFromRef(item.sectionId),
     sectionName: extractNameFromRef(item.sectionId),
-    subjectId: extractIdFromRef(item.subjectId),
-    subjectName: extractNameFromRef(item.subjectId),
     date: item.date ?? "",
     status: (item.status as AttendanceStatus) ?? "Present",
     createdAt: item.createdAt,
@@ -114,6 +159,57 @@ const extractAttendanceArray = (response: AttendanceListResponse): AttendanceApi
 };
 
 export const attendanceService = {
+  // Get enrollments for attendance marking
+  getEnrollments: async (filters: {
+    academicYearId: string;
+    classId: string;
+    sectionId: string;
+  }): Promise<Enrollment[]> => {
+    const queryParams = new URLSearchParams(filters);
+    const response = await apiClient.get<Enrollment[]>(`enrollments?${queryParams}`);
+    return response;
+  },
+
+  // Get existing attendance for class on specific date
+  getClassSummary: async (filters: {
+    academicYearId: string;
+    classId: string;
+    sectionId: string;
+    date: string;
+  }): Promise<AttendanceSummary> => {
+    const queryParams = new URLSearchParams(filters);
+    const response = await apiClient.get<AttendanceSummary>(`attendance/class-summary?${queryParams}`);
+    return response;
+  },
+
+  // Mark attendance for multiple students
+  markAttendance: async (data: BulkAttendanceData): Promise<{ totalMarked: number }> => {
+    const response = await apiClient.post<{ totalMarked: number }>("attendance/mark", data);
+    return response;
+  },
+
+  // Get attendance dashboard data
+  getDashboard: async (): Promise<{ summary: AttendanceSummary }> => {
+    const response = await apiClient.get<{ summary: AttendanceSummary }>("attendance/dashboard");
+    return response;
+  },
+
+  // Get attendance reports
+  getReports: async (filters: {
+    academicYearId?: string;
+    classId?: string;
+    sectionId?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<Attendance[]> => {
+    const queryParams = new URLSearchParams(
+      Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== undefined))
+    );
+    const response = await apiClient.get<Attendance[]>(`attendance/reports?${queryParams}`);
+    return response;
+  },
+
+  // Legacy methods for backward compatibility
   getAll: async (): Promise<Attendance[]> => {
     const response = await apiClient.get<AttendanceListResponse>(API_ENDPOINTS.attendance.base);
     const attendanceArray = extractAttendanceArray(response);
