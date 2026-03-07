@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 import SuperAdminLayout from "./components/SuperAdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Students from "./pages/admin/Students";
+import StudentAdmission from "./pages/admin/StudentAdmission";
 import Classes from "./pages/admin/Classes";
 import Subjects from "./pages/admin/Subjects";
 import Teachers from "./pages/admin/Teachers";
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="academic-years" element={<AcademicYears />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="students" element={<Students />} />
+            <Route path="students/admission" element={<StudentAdmission />} />
             <Route path="classes" element={<Classes />} />
             <Route path="subjects" element={<Subjects />} />
             <Route path="teachers" element={<Teachers />} />

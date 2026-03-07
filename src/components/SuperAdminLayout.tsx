@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAcademicYear } from "@/hooks/useAcademicYear";
 import AcademicYearBanner from "@/components/AcademicYearBanner";
 import {
@@ -20,6 +20,8 @@ import {
   LogOut,
   Menu,
   X,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -64,8 +66,23 @@ const menuItems = [
 
 export default function SuperAdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const navigate = useNavigate();
+  const location = useLocation();
   const { current, loading } = useAcademicYear({ fetchListOnMount: false });
+
+  // Debug: Log menu items
+  console.log("🔍 SuperAdmin Menu Items:", menuItems);
+
+  const toggleExpanded = (path: string) => {
+    setExpandedItems(prev => 
+      prev.includes(path) 
+        ? prev.filter(item => item !== path)
+        : [...prev, path]
+    );
+  };
+
+  const isExpanded = (path: string) => expandedItems.includes(path);
 
   const handleLogout = async () => {
     await logout();
@@ -102,21 +119,63 @@ export default function SuperAdminLayout() {
         {/* Navigation */}
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {menuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === "/admin"}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
-                  "hover:bg-accent hover:text-accent-foreground",
-                  isActive && "bg-primary text-primary-foreground hover:bg-primary/90"
-                )
-              }
-            >
-              <item.icon className="h-5 w-5 shrink-0" />
-              {sidebarOpen && <span className="text-sm font-medium">{item.label}</span>}
-            </NavLink>
+            <div key={item.path}>
+              {/* Parent Menu Item */}
+              <NavLink
+                to={item.children ? item.path : item.path}
+                end={item.path === "/admin"}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
+                    "hover:bg-accent hover:text-accent-foreground",
+                    isActive && "bg-primary text-primary-foreground hover:bg-primary/90"
+                  )
+                }
+                onClick={() => {
+                  if (item.children) {
+                    toggleExpanded(item.path);
+                  }
+                }}
+              >
+                <item.icon className="h-5 w-5 shrink-0" />
+                {sidebarOpen && (
+                  <>
+                    <span className="text-sm font-medium">{item.label}</span>
+                    {item.children && (
+                      isExpanded(item.path) ? (
+                        <ChevronDown className="h-4 w-4 ml-auto" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 ml-auto" />
+                      )
+                    )}
+                  </>
+                )}
+              </NavLink>
+
+              {/* Child Menu Items */}
+              {item.children && sidebarOpen && isExpanded(item.path) && (
+                <div className="ml-4 mt-1 space-y-1">
+                  {item.children.map((child) => (
+                    <NavLink
+                      key={child.path}
+                      to={child.path}
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
+                          "hover:bg-accent hover:text-accent-foreground",
+                          isActive && "bg-primary text-primary-foreground hover:bg-primary/90"
+                        )
+                      }
+                    >
+                      <child.icon className="h-4 w-4 shrink-0" />
+                      {sidebarOpen && (
+                        <span className="text-sm font-medium">{child.label}</span>
+                      )}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
 

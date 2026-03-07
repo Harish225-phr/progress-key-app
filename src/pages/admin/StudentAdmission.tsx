@@ -19,6 +19,8 @@ import { academicYearService } from "@/services/academicYearService";
 import { userService, type User } from "@/services/userService";
 import { useNavigate } from "react-router-dom";
 
+console.log("🚀 StudentAdmission component loading...");
+
 export default function StudentAdmission() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,26 +30,36 @@ export default function StudentAdmission() {
   const [parents, setParents] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Debug: Check studentService on component mount
+  console.log("🔍 Component mounted - studentService:", studentService);
+  console.log("🔍 Component mounted - admitStudent:", studentService?.admitStudent);
+  console.log("🔍 Component mounted - typeof:", typeof studentService?.admitStudent);
+
   const [formData, setFormData] = useState<StudentAdmissionData>({
-    name: "",
+    firstName: "",
+    lastName: "",
+    admissionNumber: "",
+    gender: "Male",
+    dateOfBirth: "",
     email: "",
     password: "",
-    admissionNumber: "",
-    dob: "",
-    gender: "male",
-    parentId: "",
     academicYearId: "",
     classId: "",
     sectionId: "",
     rollNumber: 1,
+    parentUserId: "",
+    address: "",
+    bloodGroup: "",
   });
+
+  const [admissionMode, setAdmissionMode] = useState<"quick" | "full">("quick");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [classesData, academicYearsData, parentsData] = await Promise.all([
           getClasses(),
-          academicYearService.getAll(),
+          academicYearService.getList(),
           userService.getAll(),
         ]);
 
@@ -109,19 +121,14 @@ export default function StudentAdmission() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
-    if (!formData.name.trim()) {
-      toast.error("Student name is required");
+    // Basic validation for quick mode
+    if (!formData.firstName.trim()) {
+      toast.error("First name is required");
       return;
     }
 
-    if (!formData.email.trim()) {
-      toast.error("Email is required");
-      return;
-    }
-
-    if (!formData.password) {
-      toast.error("Password is required");
+    if (!formData.lastName.trim()) {
+      toast.error("Last name is required");
       return;
     }
 
@@ -130,34 +137,37 @@ export default function StudentAdmission() {
       return;
     }
 
-    if (!formData.dob) {
+    if (!formData.dateOfBirth) {
       toast.error("Date of birth is required");
       return;
     }
 
-    if (!formData.parentId) {
-      toast.error("Parent selection is required");
+    if (!formData.gender) {
+      toast.error("Gender is required");
       return;
     }
 
-    if (!formData.academicYearId) {
-      toast.error("Academic year selection is required");
-      return;
-    }
+    // Full mode validation
+    if (admissionMode === "full") {
+      if (!formData.academicYearId) {
+        toast.error("Academic year is required for full admission");
+        return;
+      }
 
-    if (!formData.classId) {
-      toast.error("Class selection is required");
-      return;
-    }
+      if (!formData.classId) {
+        toast.error("Class is required for full admission");
+        return;
+      }
 
-    if (!formData.sectionId) {
-      toast.error("Section selection is required");
-      return;
-    }
+      if (!formData.sectionId) {
+        toast.error("Section is required for full admission");
+        return;
+      }
 
-    if (formData.rollNumber < 1) {
-      toast.error("Roll number must be at least 1");
-      return;
+      if (formData.rollNumber < 1) {
+        toast.error("Roll number must be at least 1");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -166,12 +176,20 @@ export default function StudentAdmission() {
     console.log("🔍 Student Admission Data:", formData);
     console.log("🔍 Student Service:", studentService);
     console.log("🔍 Available functions:", Object.keys(studentService));
+    console.log("🔍 admitStudent function:", studentService?.admitStudent);
+    console.log("🔍 admitStudent type:", typeof studentService?.admitStudent);
 
     try {
       console.log("🚀 Calling admitStudent...");
+      console.log("🚀 Function exists:", typeof studentService.admitStudent === 'function');
       const result = await studentService.admitStudent(formData);
       console.log("✅ Admission successful:", result);
-      toast.success("Student admitted successfully!");
+      
+      const message = admissionMode === "quick" 
+        ? "Student admitted successfully! Assign class later." 
+        : "Student admitted and enrolled successfully!";
+      
+      toast.success(message);
       navigate("/admin/students");
     } catch (error) {
       console.error("❌ Admission Error:", error);
@@ -195,169 +213,187 @@ export default function StudentAdmission() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate("/admin/students")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Students
-        </Button>
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Student Admission</h1>
-          <p className="text-muted-foreground">Admit a new student to the school</p>
+          <p className="text-muted-foreground">
+            {admissionMode === "quick" 
+              ? "Quick admission with basic information" 
+              : "Complete admission with class assignment"}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant={admissionMode === "quick" ? "default" : "outline"}
+            onClick={() => setAdmissionMode("quick")}
+          >
+            Quick Admission
+          </Button>
+          <Button
+            variant={admissionMode === "full" ? "default" : "outline"}
+            onClick={() => setAdmissionMode("full")}
+          >
+            Full Admission
+          </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Student Information</CardTitle>
+          <CardTitle>
+            {admissionMode === "quick" ? "Basic Information" : "Complete Information"}
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Personal Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="name">Full Name *</Label>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Required Fields - Always Show */}
+            <div>
+              <Label htmlFor="firstName">First Name *</Label>
+              <Input
+                id="firstName"
+                value={formData.firstName}
+                onChange={(e) => handleInputChange("firstName", e.target.value)}
+                placeholder="Enter student's first name"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="lastName">Last Name *</Label>
+              <Input
+                id="lastName"
+                value={formData.lastName}
+                onChange={(e) => handleInputChange("lastName", e.target.value)}
+                placeholder="Enter student's last name"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="admissionNumber">Admission Number *</Label>
+              <div className="flex gap-2">
                 <Input
-                  id="name"
-                  placeholder="Enter student's full name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  disabled={isSubmitting}
+                  id="admissionNumber"
+                  value={formData.admissionNumber}
+                  onChange={(e) => handleInputChange("admissionNumber", e.target.value)}
+                  placeholder="Auto-generated or enter manually"
                   required
                 />
-              </div>
-
-              <div>
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="student@example.com"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="password">Password *</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter password"
-                    value={formData.password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
-                    disabled={isSubmitting}
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={generatePassword}
-                    disabled={isSubmitting}
-                  >
-                    Generate
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="admissionNumber">Admission Number *</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="admissionNumber"
-                    placeholder="e.g., ADM-2026-001"
-                    value={formData.admissionNumber}
-                    onChange={(e) => handleInputChange("admissionNumber", e.target.value)}
-                    disabled={isSubmitting}
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={generateAdmissionNumber}
-                    disabled={isSubmitting}
-                  >
-                    Generate
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="dob">Date of Birth *</Label>
-                <Input
-                  id="dob"
-                  type="date"
-                  value={formData.dob}
-                  onChange={(e) => handleInputChange("dob", e.target.value)}
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="gender">Gender *</Label>
-                <Select
-                  value={formData.gender}
-                  onValueChange={(value: "male" | "female" | "other") => handleInputChange("gender", value)}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={generateAdmissionNumber}
                   disabled={isSubmitting}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                  Generate
+                </Button>
               </div>
             </div>
 
-            {/* Academic Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Academic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="parentId">Parent *</Label>
-                  <Select
-                    value={formData.parentId}
-                    onValueChange={(value) => handleInputChange("parentId", value)}
-                    disabled={isSubmitting || parents.length === 0}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          parents.length === 0 ? "No parents available" : "Select parent"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {parents.map((parent) => (
-                        <SelectItem key={parent.id} value={parent.id}>
-                          {parent.name} ({parent.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div>
+              <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+              <Input
+                id="dateOfBirth"
+                type="date"
+                value={formData.dateOfBirth}
+                onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                required
+              />
+            </div>
 
+            <div>
+              <Label htmlFor="gender">Gender *</Label>
+              <Select
+                value={formData.gender}
+                onValueChange={(value: "Male" | "Female" | "Other") => handleInputChange("gender", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Optional Fields - Always Available */}
+            <div>
+              <Label htmlFor="email">Email (Optional)</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                placeholder="student@example.com"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="password">Password (Optional - Auto-generated)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  placeholder="Leave blank to auto-generate"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={generatePassword}
+                  disabled={isSubmitting}
+                >
+                  Generate
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="address">Address (Optional)</Label>
+              <Input
+                id="address"
+                value={formData.address}
+                onChange={(e) => handleInputChange("address", e.target.value)}
+                placeholder="Enter address"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="bloodGroup">Blood Group (Optional)</Label>
+              <Select value={formData.bloodGroup} onValueChange={(value) => handleInputChange("bloodGroup", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select blood group" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A+">A+</SelectItem>
+                  <SelectItem value="A-">A-</SelectItem>
+                  <SelectItem value="B+">B+</SelectItem>
+                  <SelectItem value="B-">B-</SelectItem>
+                  <SelectItem value="AB+">AB+</SelectItem>
+                  <SelectItem value="AB-">AB-</SelectItem>
+                  <SelectItem value="O+">O+</SelectItem>
+                  <SelectItem value="O-">O-</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Full Admission Mode - Additional Fields */}
+          {admissionMode === "full" && (
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="text-lg font-semibold">Academic Assignment</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="academicYearId">Academic Year *</Label>
+                  <Label htmlFor="academicYear">Academic Year</Label>
                   <Select
                     value={formData.academicYearId}
                     onValueChange={(value) => handleInputChange("academicYearId", value)}
-                    disabled={isSubmitting || academicYears.length === 0}
                   >
                     <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          academicYears.length === 0
-                            ? "No academic years available"
-                            : "Select academic year"
-                        }
-                      />
+                      <SelectValue placeholder="Select academic year" />
                     </SelectTrigger>
                     <SelectContent>
                       {academicYears.map((year) => (
@@ -370,7 +406,7 @@ export default function StudentAdmission() {
                 </div>
 
                 <div>
-                  <Label htmlFor="classId">Class *</Label>
+                  <Label htmlFor="class">Class</Label>
                   <Select
                     value={formData.classId}
                     onValueChange={(value) => {
@@ -397,7 +433,7 @@ export default function StudentAdmission() {
                 </div>
 
                 <div>
-                  <Label htmlFor="sectionId">Section *</Label>
+                  <Label htmlFor="section">Section</Label>
                   <Select
                     value={formData.sectionId}
                     onValueChange={(value) => handleInputChange("sectionId", value)}
@@ -419,44 +455,63 @@ export default function StudentAdmission() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              <div className="w-full md:w-1/4">
-                <Label htmlFor="rollNumber">Roll Number *</Label>
-                <Input
-                  id="rollNumber"
-                  type="number"
-                  placeholder="Enter roll number"
-                  value={formData.rollNumber}
-                  onChange={(e) => handleInputChange("rollNumber", parseInt(e.target.value) || 1)}
-                  disabled={isSubmitting}
-                  min="1"
-                  required
-                />
+                <div>
+                  <Label htmlFor="rollNumber">Roll Number</Label>
+                  <Input
+                    id="rollNumber"
+                    type="number"
+                    value={formData.rollNumber}
+                    onChange={(e) => handleInputChange("rollNumber", parseInt(e.target.value) || 1)}
+                    min="1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="parentUserId">Parent (Optional)</Label>
+                  <Select
+                    value={formData.parentUserId}
+                    onValueChange={(value) => handleInputChange("parentUserId", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select parent" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {parents.map((parent) => (
+                        <SelectItem key={parent.id} value={parent.id}>
+                          {parent.name} - {parent.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/admin/students")}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Admitting Student...
-                  </>
-                ) : (
-                  "Admit Student"
-                )}
-              </Button>
-            </div>
-          </form>
+            <div className="flex gap-4 pt-4">
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="flex-1"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {admissionMode === "quick" ? "Quick Admitting..." : "Admitting..."}
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {admissionMode === "quick" ? "Quick Admit Student" : "Admit Student"}
+                </>
+              )}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => navigate("/admin/students")}>
+              Cancel
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -2,17 +2,20 @@ import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
 export interface StudentAdmissionData {
-  name: string;
-  email: string;
-  password: string;
+  firstName: string;
+  lastName: string;
   admissionNumber: string;
-  dob: string;
-  gender: "male" | "female" | "other";
-  parentId: string;
-  academicYearId: string;
-  classId: string;
-  sectionId: string;
-  rollNumber: number;
+  gender: "Male" | "Female" | "Other";
+  dateOfBirth: string;
+  email?: string;
+  password?: string;
+  academicYearId?: string;
+  classId?: string;
+  sectionId?: string;
+  rollNumber?: number;
+  parentUserId?: string;
+  address?: string;
+  bloodGroup?: string;
 }
 
 export interface Student {
@@ -171,7 +174,7 @@ const extractStudentsArray = (response: StudentsListResponse): StudentApiRespons
 export const studentService = {
   // Student Admission
   admitStudent: async (data: StudentAdmissionData): Promise<Student> => {
-    const response = await apiClient.post<StudentApiResponse>("students/admission", data);
+    const response = await apiClient.post<StudentApiResponse>("admission", data);
     return normalizeStudent(response);
   },
 
