@@ -28,8 +28,25 @@ import { logout } from "@/services/authService";
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
   { icon: CalendarRange, label: "Academic Year", path: "/admin/academic-years" },
-  { icon: Users, label: "User Management", path: "/admin/users" },
-  { icon: Users, label: "Students", path: "/admin/students" },
+  { 
+    icon: Users, 
+    label: "User Management", 
+    path: "/admin/users",
+    children: [
+      { icon: UserCog, label: "Admins", path: "/admin/users?role=admin" },
+      { icon: UserCog, label: "Teachers", path: "/admin/users?role=teacher" },
+      { icon: UserCog, label: "Parents", path: "/admin/users?role=parent" },
+    ]
+  },
+  { 
+    icon: Users, 
+    label: "Student Management", 
+    path: "/admin/students",
+    children: [
+      { icon: Users, label: "Student Admission", path: "/admin/students/admission" },
+      { icon: Users, label: "Student List", path: "/admin/students" },
+    ]
+  },
   { icon: BookOpen, label: "Classes & Sections", path: "/admin/classes" },
   { icon: GraduationCap, label: "Subjects", path: "/admin/subjects" },
   { icon: UserCog, label: "Teachers", path: "/admin/teachers" },

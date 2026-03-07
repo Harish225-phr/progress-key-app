@@ -1,55 +1,114 @@
 import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
-export interface StudentData {
+export interface StudentAdmissionData {
+  name: string;
+  email: string;
+  password: string;
   admissionNumber: string;
-  firstName: string;
-  lastName: string;
-  gender: "Male" | "Female" | "Other";
-  dateOfBirth: string;
+  dob: string;
+  gender: "male" | "female" | "other";
+  parentId: string;
+  academicYearId: string;
   classId: string;
   sectionId: string;
-  parentName: string;
-  parentPhone: string;
-  address: string;
+  rollNumber: number;
 }
 
 export interface Student {
   id: string;
+  name: string;
+  email: string;
   admissionNumber: string;
-  firstName: string;
-  lastName: string;
-  gender: string;
-  dateOfBirth: string;
+  dob: string;
+  gender: "male" | "female" | "other";
+  parentId: string;
+  parentName?: string;
+  academicYearId: string;
+  academicYearName?: string;
   classId: string;
   className?: string;
   sectionId: string;
   sectionName?: string;
-  parentName: string;
-  parentPhone: string;
-  address: string;
+  rollNumber: number;
+  status: "active" | "inactive" | "graduated" | "transferred";
   createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface StudentProfile extends Student {
+  enrollments: Enrollment[];
+  attendance: AttendanceRecord[];
+  results: ExamResult[];
+  feeRecords: FeeRecord[];
+}
+
+export interface Enrollment {
+  id: string;
+  academicYearId: string;
+  academicYearName: string;
+  classId: string;
+  className: string;
+  sectionId: string;
+  sectionName: string;
+  rollNumber: number;
+  enrollmentDate: string;
+  status: "active" | "completed" | "withdrawn";
+}
+
+export interface AttendanceRecord {
+  id: string;
+  date: string;
+  status: "present" | "absent" | "late" | "leave";
+  subject?: string;
+  remarks?: string;
+}
+
+export interface ExamResult {
+  id: string;
+  examId: string;
+  examName: string;
+  subjectId: string;
+  subjectName: string;
+  marks: number;
+  totalMarks: number;
+  percentage: number;
+  grade: string;
+  examDate: string;
+}
+
+export interface FeeRecord {
+  id: string;
+  feeStructureId: string;
+  feeType: string;
+  amount: number;
+  dueDate: string;
+  paidDate?: string;
+  status: "pending" | "paid" | "overdue" | "partial";
+  paidAmount?: number;
 }
 
 type PopulatedRef = {
   _id?: string;
   id?: string;
   name?: string;
+  email?: string;
 } | string;
 
 type StudentApiResponse = {
   id?: string;
   _id?: string;
+  name?: string;
+  email?: string;
   admissionNumber?: string;
-  firstName?: string;
-  lastName?: string;
+  dob?: string;
   gender?: string;
-  dateOfBirth?: string;
+  parentId?: PopulatedRef;
+  academicYearId?: PopulatedRef;
   classId?: PopulatedRef;
   sectionId?: PopulatedRef;
-  parentName?: string;
-  parentPhone?: string;
-  address?: string;
+  rollNumber?: number;
+  status?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -79,19 +138,23 @@ const normalizeStudent = (item: StudentApiResponse): Student => {
 
   return {
     id: String(normalizedId),
+    name: item.name ?? "",
+    email: item.email ?? "",
     admissionNumber: item.admissionNumber ?? "",
-    firstName: item.firstName ?? "",
-    lastName: item.lastName ?? "",
-    gender: item.gender ?? "",
-    dateOfBirth: item.dateOfBirth ?? "",
+    dob: item.dob ?? "",
+    gender: (item.gender as "male" | "female" | "other") ?? "other",
+    parentId: extractIdFromRef(item.parentId),
+    parentName: extractNameFromRef(item.parentId),
+    academicYearId: extractIdFromRef(item.academicYearId),
+    academicYearName: extractNameFromRef(item.academicYearId),
     classId: extractIdFromRef(item.classId),
     className: extractNameFromRef(item.classId),
     sectionId: extractIdFromRef(item.sectionId),
     sectionName: extractNameFromRef(item.sectionId),
-    parentName: item.parentName ?? "",
-    parentPhone: item.parentPhone ?? "",
-    address: item.address ?? "",
+    rollNumber: item.rollNumber ?? 0,
+    status: (item.status as "active" | "inactive" | "graduated" | "transferred") ?? "active",
     createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
   };
 };
 
@@ -106,8 +169,28 @@ const extractStudentsArray = (response: StudentsListResponse): StudentApiRespons
 };
 
 export const studentService = {
-  getAll: async (): Promise<Student[]> => {
-    const response = await apiClient.get<StudentsListResponse>(API_ENDPOINTS.students.base);
+  // Student Admission
+  admitStudent: async (data: StudentAdmissionData): Promise<Student> => {
+    const response = await apiClient.post<StudentApiResponse>("students/admission", data);
+    return normalizeStudent(response);
+  },
+
+  // Get all students with optional filters
+  getAll: async (filters?: {
+    academicYearId?: string;
+    classId?: string;
+    sectionId?: string;
+  }): Promise<Student[]> => {
+    const queryParams = new URLSearchParams();
+    if (filters?.academicYearId) queryParams.append("academicYearId", filters.academicYearId);
+    if (filters?.classId) queryParams.append("classId", filters.classId);
+    if (filters?.sectionId) queryParams.append("sectionId", filters.sectionId);
+    
+    const endpoint = queryParams.toString() 
+      ? `${API_ENDPOINTS.students.base}?${queryParams.toString()}`
+      : API_ENDPOINTS.students.base;
+    
+    const response = await apiClient.get<StudentsListResponse>(endpoint);
     const studentsArray = extractStudentsArray(response);
     return studentsArray
       .map((item) => {
@@ -120,22 +203,37 @@ export const studentService = {
       .filter((item): item is Student => item !== null);
   },
 
+  // Get student by ID
   getById: async (studentId: string): Promise<Student> => {
     const response = await apiClient.get<StudentApiResponse>(API_ENDPOINTS.students.byId(studentId));
     return normalizeStudent(response);
   },
 
-  create: async (payload: StudentData): Promise<Student> => {
-    const response = await apiClient.post<StudentApiResponse>(API_ENDPOINTS.students.base, payload);
+  // Get student profile with all details
+  getProfile: async (studentId: string): Promise<StudentProfile> => {
+    const response = await apiClient.get<StudentProfile>(`students/profile/${studentId}`);
+    return response;
+  },
+
+  // Update student
+  update: async (studentId: string, data: Partial<Omit<StudentAdmissionData, "password" | "admissionNumber">>): Promise<Student> => {
+    const response = await apiClient.patch<StudentApiResponse>(API_ENDPOINTS.students.byId(studentId), data);
     return normalizeStudent(response);
   },
 
-  update: async (studentId: string, payload: Partial<StudentData>): Promise<Student> => {
-    const response = await apiClient.patch<StudentApiResponse>(API_ENDPOINTS.students.byId(studentId), payload);
-    return normalizeStudent(response);
-  },
-
+  // Delete student
   delete: async (studentId: string): Promise<void> => {
     await apiClient.delete<void>(API_ENDPOINTS.students.byId(studentId));
+  },
+
+  // Update enrollment
+  updateEnrollment: async (studentId: string, data: {
+    academicYearId: string;
+    classId: string;
+    sectionId: string;
+    rollNumber: number;
+  }): Promise<Student> => {
+    const response = await apiClient.patch<StudentApiResponse>(`students/${studentId}/enrollment`, data);
+    return normalizeStudent(response);
   },
 };
