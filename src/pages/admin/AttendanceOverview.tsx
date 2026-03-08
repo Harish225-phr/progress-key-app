@@ -377,16 +377,16 @@ export default function AttendanceOverview() {
                                       <TableCell className="font-medium">
                                         {studentName}
                                       </TableCell>
-                                      <TableCell>{student.rollNumber}</TableCell>
+                                      <TableCell>{student.rollNumber || '-'}</TableCell>
                                       <TableCell>
                                         <Badge
                                           variant={
-                                            student.status === "active"
+                                            student.status === "enrolled" || student.status === "active"
                                               ? "default"
                                               : "secondary"
                                           }
                                         >
-                                          {student.status || "active"}
+                                          {student.status || "enrolled"}
                                         </Badge>
                                       </TableCell>
                                       <TableCell>

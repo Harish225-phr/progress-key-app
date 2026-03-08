@@ -48,8 +48,19 @@ export interface Enrollment {
     _id: string;
     name: string;
   };
-  rollNumber?: number;
+  rollNumber?: string | number;
   status: string;
+  enrollmentDate?: string;
+  academicSummary?: {
+    totalAttendance: number;
+    presentDays: number;
+    totalFees: number;
+    paidFees: number;
+    averageMarks: number;
+  };
+  schoolId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Attendance {
@@ -166,7 +177,7 @@ export const attendanceService = {
     sectionId: string;
   }): Promise<Enrollment[]> => {
     const queryParams = new URLSearchParams(filters);
-    const response = await apiClient.get<Enrollment[]>(`attendance/enrollments?${queryParams}`);
+    const response = await apiClient.get<Enrollment[]>(`attendance/enrollments/enrollments?${queryParams}`);
     return response;
   },
 
@@ -193,7 +204,7 @@ export const attendanceService = {
     classId: string;
   }): Promise<Enrollment[]> => {
     const queryParams = new URLSearchParams(filters);
-    const response = await apiClient.get<Enrollment[]>(`attendance/enrollments?${queryParams}`);
+    const response = await apiClient.get<Enrollment[]>(`attendance/enrollments/enrollments?${queryParams}`);
     return response;
   },
 
