@@ -208,6 +208,49 @@ export const attendanceService = {
     return response;
   },
 
+  // Mark attendance for students
+  markAttendance: async (attendanceData: {
+    academicYearId: string;
+    classId: string;
+    sectionId: string;
+    date: string;
+    attendance: Array<{
+      enrollmentId: string;
+      status: "present" | "absent" | "late" | "leave";
+    }>;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      date: string;
+      totalStudents: number;
+      markedAttendance: number;
+      summary: {
+        present: number;
+        absent: number;
+        late: number;
+        leave: number;
+      };
+    };
+  }> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      message: string;
+      data: {
+        date: string;
+        totalStudents: number;
+        markedAttendance: number;
+        summary: {
+          present: number;
+          absent: number;
+          late: number;
+          leave: number;
+        };
+      };
+    }>(`attendance/enrollments/mark`, attendanceData);
+    return response;
+  },
+
   // Get existing attendance for class on specific date
   getClassSummary: async (filters: {
     academicYearId: string;
@@ -216,13 +259,7 @@ export const attendanceService = {
     date: string;
   }): Promise<AttendanceSummary> => {
     const queryParams = new URLSearchParams(filters);
-    const response = await apiClient.get<AttendanceSummary>(`attendance/class-summary?${queryParams}`);
-    return response;
-  },
-
-  // Mark attendance for multiple students
-  markAttendance: async (data: BulkAttendanceData): Promise<{ totalMarked: number }> => {
-    const response = await apiClient.post<{ totalMarked: number }>("attendance/mark", data);
+    const response = await apiClient.get<AttendanceSummary>(`attendance/enrollments/class-summary?${queryParams}`);
     return response;
   },
 
