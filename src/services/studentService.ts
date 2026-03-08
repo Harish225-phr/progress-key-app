@@ -204,8 +204,23 @@ export const studentService = {
 
     try {
       // Use admission API to get students
-      const response = await apiClient.get<{success: boolean; data: StudentAdmissionData[]; pagination: any}>(`admission?${queryParams}`);
-      return response.data.map(student => ({
+      const response = await apiClient.get<StudentAdmissionData[] | {success: boolean; data: StudentAdmissionData[]; pagination: any}>(`admission?${queryParams}`);
+      
+      // Handle both wrapped and direct array responses
+      let studentsData: StudentAdmissionData[] = [];
+      
+      if (Array.isArray(response)) {
+        // Direct array response
+        studentsData = response;
+      } else if (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data)) {
+        // Wrapped response
+        studentsData = response.data;
+      } else {
+        console.error('Invalid API response structure:', response);
+        return [];
+      }
+      
+      return studentsData.map(student => ({
         id: student._id || '',
         name: `${student.firstName} ${student.lastName}`,
         email: student.userId?.email || '',
@@ -239,8 +254,23 @@ export const studentService = {
     );
 
     try {
-      const response = await apiClient.get<{success: boolean; data: StudentAdmissionData[]; pagination: any}>(`admission?${queryParams}`);
-      return response.data.map(student => ({
+      const response = await apiClient.get<StudentAdmissionData[] | {success: boolean; data: StudentAdmissionData[]; pagination: any}>(`admission?${queryParams}`);
+      
+      // Handle both wrapped and direct array responses
+      let studentsData: StudentAdmissionData[] = [];
+      
+      if (Array.isArray(response)) {
+        // Direct array response
+        studentsData = response;
+      } else if (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data)) {
+        // Wrapped response
+        studentsData = response.data;
+      } else {
+        console.error('Invalid API response structure:', response);
+        return [];
+      }
+      
+      return studentsData.map(student => ({
         id: student._id || '',
         name: `${student.firstName} ${student.lastName}`,
         email: student.userId?.email || '',

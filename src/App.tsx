@@ -11,15 +11,15 @@ import SuperAdminLayout from "./components/SuperAdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Students from "./pages/admin/Students";
 import StudentAdmission from "./pages/admin/StudentAdmission";
-import AttendanceMarking from "./pages/admin/AttendanceMarking";
-import Classes from "./pages/admin/Classes";
+import AttendanceMarking from "@/pages/admin/AttendanceMarking";
+import AttendanceOverview from "@/pages/admin/AttendanceOverview";
+import Behaviour from "@/pages/admin/Behaviour";
 import Subjects from "./pages/admin/Subjects";
 import Teachers from "./pages/admin/Teachers";
 import Mapping from "./pages/admin/Mapping";
 import ClassTeachers from "./pages/admin/ClassTeachers";
 import Attendance from "./pages/admin/Attendance";
 import Marks from "./pages/admin/Marks";
-import Behaviour from "./pages/admin/Behaviour";
 import Materials from "./pages/admin/Materials";
 import Homework from "./pages/admin/Homework";
 import Announcements from "./pages/admin/Announcements";
@@ -27,6 +27,7 @@ import Fees from "./pages/admin/Fees";
 import UserManagement from "./pages/admin/UserManagement";
 import AuditLogs from "./pages/admin/AuditLogs";
 import AcademicYears from "./pages/admin/AcademicYears";
+import Classes from "./pages/admin/Classes";
 import ClassTeacherLayout from "./components/ClassTeacherLayout";
 import ClassTeacherDashboard from "./pages/class-teacher/Dashboard";
 import StudentList from "./pages/class-teacher/StudentList";
@@ -81,6 +82,7 @@ const App = () => (
             <Route path="students" element={<Students />} />
             <Route path="students/admission" element={<StudentAdmission />} />
             <Route path="attendance/marking" element={<AttendanceMarking />} />
+            <Route path="attendance/overview" element={<AttendanceOverview />} />
             <Route path="attendance" element={<Attendance />} />
             <Route path="classes" element={<Classes />} />
             <Route path="subjects" element={<Subjects />} />

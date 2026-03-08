@@ -119,19 +119,8 @@ export default function StudentList() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real implementation, this would call the API with search term
-    // For now, we'll filter locally
-    if (searchTerm.trim()) {
-      const filtered = students.filter(
-        (student) =>
-          student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          student.admissionNumber.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setStudents(filtered);
-    } else {
-      fetchStudents();
-    }
+    // Search is now handled by filteredStudents computed value
+    // No need to modify students state here
   };
 
   const getStudentStatusBadge = (status: string) => {

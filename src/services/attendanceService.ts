@@ -166,7 +166,34 @@ export const attendanceService = {
     sectionId: string;
   }): Promise<Enrollment[]> => {
     const queryParams = new URLSearchParams(filters);
-    const response = await apiClient.get<Enrollment[]>(`enrollments?${queryParams}`);
+    const response = await apiClient.get<Enrollment[]>(`attendance/enrollments?${queryParams}`);
+    return response;
+  },
+
+  // Get all enrollments for school admin (all classes, all sections in academic year)
+  getAllEnrollments: async (academicYearId: string): Promise<Enrollment[]> => {
+    const response = await apiClient.get<{success: boolean; data: { allEnrollments: Enrollment[]; enrollmentsByClass: any; totalEnrollments: number }} | { allEnrollments: Enrollment[]; enrollmentsByClass: any; totalEnrollments: number }>(`attendance/enrollments/all-enrollments?academicYearId=${academicYearId}`);
+    
+    // Handle both wrapped and direct responses
+    if (response && typeof response === 'object' && 'success' in response) {
+      // Wrapped response
+      return response.data.allEnrollments;
+    } else if (response && typeof response === 'object' && 'allEnrollments' in response) {
+      // Direct response
+      return response.allEnrollments;
+    } else {
+      console.error('Invalid API response structure:', response);
+      return [];
+    }
+  },
+
+  // Get enrollments for specific class (all sections)
+  getClassEnrollments: async (filters: {
+    academicYearId: string;
+    classId: string;
+  }): Promise<Enrollment[]> => {
+    const queryParams = new URLSearchParams(filters);
+    const response = await apiClient.get<Enrollment[]>(`attendance/enrollments?${queryParams}`);
     return response;
   },
 

@@ -55,6 +55,7 @@ const menuItems = [
     path: "/admin/attendance",
     children: [
       { icon: CalendarCheck, label: "Mark Attendance", path: "/admin/attendance/marking" },
+      { icon: Users, label: "Attendance Overview", path: "/admin/attendance/overview" },
       { icon: CalendarCheck, label: "Attendance Reports", path: "/admin/attendance" },
     ]
   },
