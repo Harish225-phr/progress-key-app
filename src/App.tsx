@@ -48,16 +48,28 @@ import SubjectBehaviour from "./pages/subject-teacher/Behaviour";
 import SubjectDailyTopics from "./pages/subject-teacher/DailyTopics";
 import SubjectPerformance from "./pages/subject-teacher/Performance";
 import StudentParentLayout from "./components/StudentParentLayout";
+import ParentLayout from "./components/ParentLayout";
 import StudentDashboard from "./pages/student/Dashboard";
+import ParentDashboard from "./pages/parent/Dashboard";
 import StudentAttendance from "./pages/student/Attendance";
+import ParentAttendance from "./pages/parent/Attendance";
 import StudentHomework from "./pages/student/Homework";
+import ParentHomework from "./pages/parent/Homework";
 import StudentMaterials from "./pages/student/Materials";
 import StudentTests from "./pages/student/Tests";
+import ParentResults from "./pages/parent/Results";
 import StudentBehaviour from "./pages/student/Behaviour";
 import StudentDailyTopics from "./pages/student/DailyTopics";
 import StudentAnnouncements from "./pages/student/Announcements";
+import ParentAnnouncements from "./pages/parent/Announcements";
 import StudentLeaveRequest from "./pages/student/LeaveRequest";
+import ParentLeaveRequest from "./pages/parent/LeaveRequest";
 import StudentFees from "./pages/student/Fees";
+import ParentFees from "./pages/parent/Fees";
+import Children from "./pages/parent/Children";
+import ParentProfile from "./pages/parent/Profile";
+import ParentContact from "./pages/parent/Contact";
+import ParentSettings from "./pages/parent/Settings";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
@@ -135,6 +147,21 @@ const App = () => (
             <Route path="announcements" element={<StudentAnnouncements />} />
             <Route path="leave-request" element={<StudentLeaveRequest />} />
             <Route path="fees" element={<StudentFees />} />
+          </Route>
+
+          {/* Parent Portal Routes */}
+          <Route path="/parent" element={<ProtectedRoute allowedRoles={["parent", "STUDENT_PARENT"]}><ParentLayout /></ProtectedRoute>}>
+            <Route index element={<ParentDashboard />} />
+            <Route path="children" element={<Children />} />
+            <Route path="attendance" element={<ParentAttendance />} />
+            <Route path="results" element={<ParentResults />} />
+            <Route path="fees" element={<ParentFees />} />
+            <Route path="homework" element={<ParentHomework />} />
+            <Route path="announcements" element={<ParentAnnouncements />} />
+            <Route path="profile" element={<ParentProfile />} />
+            <Route path="leave-request" element={<ParentLeaveRequest />} />
+            <Route path="contact" element={<ParentContact />} />
+            <Route path="settings" element={<ParentSettings />} />
           </Route>
 
           <Route path="/install" element={<Install />} />
