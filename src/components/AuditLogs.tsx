@@ -52,16 +52,16 @@ const AuditLogs = ({ userId, showUserActivityOnly = false }: AuditLogsProps) => 
         limit,
       };
 
-      if (selectedAction) params.action = selectedAction;
-      if (selectedResourceType) params.resourceType = selectedResourceType;
-      if (selectedSuccess) params.success = selectedSuccess === "true";
+      if (selectedAction && selectedAction !== "all") params.action = selectedAction;
+      if (selectedResourceType && selectedResourceType !== "all") params.resourceType = selectedResourceType;
+      if (selectedSuccess && selectedSuccess !== "all") params.success = selectedSuccess === "true";
       if (startDate) params.startDate = startDate.toISOString();
       if (endDate) params.endDate = endDate.toISOString();
       if (searchTerm) params.search = searchTerm;
 
       if (showUserActivityOnly && userId) {
         response = await auditLogService.getUserActivity(userId, params);
-      } else if (selectedSuccess === "false") {
+      } else if (selectedSuccess === "false" || (selectedSuccess && selectedSuccess !== "all" && selectedSuccess === "false")) {
         response = await auditLogService.getErrorLogs(params);
       } else if (startDate && endDate) {
         response = await auditLogService.getLogsByDateRange(
@@ -292,7 +292,7 @@ const AuditLogs = ({ userId, showUserActivityOnly = false }: AuditLogsProps) => 
                     <SelectValue placeholder="Select action" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Actions</SelectItem>
+                    <SelectItem value="all">All Actions</SelectItem>
                     {actions.map((action) => (
                       <SelectItem key={action} value={action}>
                         {action}
@@ -309,7 +309,7 @@ const AuditLogs = ({ userId, showUserActivityOnly = false }: AuditLogsProps) => 
                     <SelectValue placeholder="Select resource" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Resources</SelectItem>
+                    <SelectItem value="all">All Resources</SelectItem>
                     {resourceTypes.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}
@@ -326,7 +326,7 @@ const AuditLogs = ({ userId, showUserActivityOnly = false }: AuditLogsProps) => 
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Status</SelectItem>
+                    <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="true">Success</SelectItem>
                     <SelectItem value="false">Failed</SelectItem>
                   </SelectContent>
