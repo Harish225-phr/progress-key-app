@@ -139,26 +139,37 @@ export const announcementService = {
     page?: number;
     limit?: number;
   }): Promise<{
-    announcements: Announcement[];
+    data: Announcement[];
     total: number;
     page: number;
-    totalPages: number;
+    pages: number;
   }> => {
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined) {
+        // Only add filter if it has a meaningful value (not "all" or empty)
+        if (value !== undefined && value !== "" && value !== "all") {
           queryParams.append(key, String(value));
         }
       });
     }
-    const response = await apiClient.get<{
-      announcements: Announcement[];
+    // API returns: { success, count, total, page, pages, data: [...] }
+    // We need to use getRaw to get the full response and handle it properly
+    const response = await apiClient.getRaw<{
+      success: boolean;
+      count: number;
       total: number;
       page: number;
-      totalPages: number;
+      pages: number;
+      data: Announcement[];
     }>(`announcements?${queryParams}`);
-    return response;
+    
+    return {
+      data: response.data || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      pages: response.pages || 1,
+    };
   },
 
   // Get user's announcements

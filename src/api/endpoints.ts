@@ -85,4 +85,7 @@ export const API_ENDPOINTS = {
     stats: "audit-logs/stats",
     user: (userId: string) => `audit-logs/user/${userId}`,
   },
+  announcements: {
+    base: "announcements",
+  },
 } as const;

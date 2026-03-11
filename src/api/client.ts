@@ -14,6 +14,7 @@ type ApiRequestConfig = Omit<RequestInit, "method" | "body" | "headers"> & {
   body?: unknown;
   headers?: HeadersInit;
   requiresAuth?: boolean;
+  skipUnwrap?: boolean;
 };
 
 type ApiRequestContext = {
@@ -169,7 +170,7 @@ const request = async <T>(endpoint: string, config: ApiRequestConfig = {}): Prom
 
   const context = await applyRequestInterceptors(initialContext);
 
-  const { method = "GET", body, headers, ...restConfig } = context.config;
+  const { method = "GET", body, headers, skipUnwrap = false, ...restConfig } = context.config;
 
   try {
     const response = await fetch(context.url, {
@@ -200,7 +201,7 @@ const request = async <T>(endpoint: string, config: ApiRequestConfig = {}): Prom
     }
 
     const payload = await safeParseResponseBody(nextResponse);
-    return unwrapApiResponse<T>(payload);
+    return skipUnwrap ? payload as T : unwrapApiResponse<T>(payload);
   } catch (error) {
     if (error instanceof RetryRequestError) {
       return request<T>(endpoint, config);
@@ -225,6 +226,8 @@ export const apiClient = {
   },
   get: <T>(endpoint: string, config: Omit<ApiRequestConfig, "method" | "body"> = {}) =>
     request<T>(endpoint, { ...config, method: "GET" }),
+  getRaw: <T>(endpoint: string, config: Omit<ApiRequestConfig, "method" | "body"> = {}) =>
+    request<T>(endpoint, { ...config, method: "GET", skipUnwrap: true }),
   post: <T>(endpoint: string, body?: unknown, config: Omit<ApiRequestConfig, "method" | "body"> = {}) =>
     request<T>(endpoint, { ...config, method: "POST", body }),
   put: <T>(endpoint: string, body?: unknown, config: Omit<ApiRequestConfig, "method" | "body"> = {}) =>
