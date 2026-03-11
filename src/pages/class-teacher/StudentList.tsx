@@ -28,7 +28,7 @@ import {
 import { Search, Eye, Plus, Loader2, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { studentService, type Student, type StudentData } from "@/services/studentService";
+import { studentService, type Student, type StudentAdmissionData } from "@/services/studentService";
 import { classTeacherService, type ClassTeacherAssignment } from "@/services/classTeacherService";
 
 export default function StudentList() {
@@ -39,15 +39,13 @@ export default function StudentList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<Omit<StudentData, "classId" | "sectionId">>({
-    admissionNumber: "",
+  const [formData, setFormData] = useState<Omit<StudentAdmissionData, "classId" | "sectionId" | "schoolId" | "admissionNumber" | "admissionDate" | "isActive" | "createdAt" | "updatedAt">>({
     firstName: "",
     lastName: "",
     gender: "Male",
     dateOfBirth: "",
-    parentName: "",
-    parentPhone: "",
     address: "",
+    bloodGroup: "",
   });
 
   useEffect(() => {
@@ -68,14 +66,13 @@ export default function StudentList() {
       const assignment = assignments[0];
       setMyAssignment(assignment);
 
-      // Fetch students for the assigned class/section only
+      // Fetch students from admission API (backend already filters by teacher's assignment)
       const studentsData = await studentService.getAll();
-      const filteredStudents = studentsData.filter(
-        s => s.classId === assignment.classId && s.sectionId === assignment.sectionId
-      );
-      setStudents(filteredStudents);
-    } catch {
-      toast.error("Failed to fetch data");
+      
+      setStudents(studentsData);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      toast.error("Failed to fetch student data");
     } finally {
       setLoading(false);
     }
@@ -89,10 +86,6 @@ export default function StudentList() {
       return;
     }
 
-    if (!formData.admissionNumber.trim()) {
-      toast.error("Admission number is required");
-      return;
-    }
     if (!formData.firstName.trim()) {
       toast.error("First name is required");
       return;
@@ -104,24 +97,27 @@ export default function StudentList() {
 
     setIsSubmitting(true);
     try {
-      const studentData: StudentData = {
+      const studentData: StudentAdmissionData = {
         ...formData,
+        admissionNumber: `ADM-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`,
         classId: myAssignment.classId,
         sectionId: myAssignment.sectionId,
+        schoolId: myAssignment.schoolId || "",
+        admissionDate: new Date().toISOString(),
+        isActive: true,
       };
-      const newStudent = await studentService.create(studentData);
+      
+      const newStudent = await studentService.admitStudent(studentData);
       setStudents(prev => [...prev, newStudent]);
       toast.success("Student added successfully!");
       setDialogOpen(false);
       setFormData({
-        admissionNumber: "",
         firstName: "",
         lastName: "",
         gender: "Male",
         dateOfBirth: "",
-        parentName: "",
-        parentPhone: "",
         address: "",
+        bloodGroup: "",
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to add student";
@@ -132,7 +128,7 @@ export default function StudentList() {
   };
 
   const filteredStudents = students.filter((student) => {
-    const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
+    const fullName = student.name.toLowerCase();
     return fullName.includes(searchTerm.toLowerCase());
   });
 
@@ -190,35 +186,6 @@ export default function StudentList() {
             <form onSubmit={handleAddStudent} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="admissionNumber">Admission Number *</Label>
-                  <Input
-                    id="admissionNumber"
-                    placeholder="e.g., ADM001"
-                    value={formData.admissionNumber}
-                    onChange={(e) => setFormData({ ...formData, admissionNumber: e.target.value })}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="gender">Gender *</Label>
-                  <Select
-                    value={formData.gender}
-                    onValueChange={(value) => setFormData({ ...formData, gender: value as "Male" | "Female" | "Other" })}
-                    disabled={isSubmitting}
-                  >
-                    <SelectTrigger id="gender">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
                   <Label htmlFor="firstName">First Name *</Label>
                   <Input
                     id="firstName"
@@ -239,47 +206,56 @@ export default function StudentList() {
                   />
                 </div>
               </div>
-              <div>
-                <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                  disabled={isSubmitting}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="gender">Gender *</Label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) => setFormData({ ...formData, gender: value as "Male" | "Female" | "Other" })}
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger id="gender">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                    disabled={isSubmitting}
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="parentName">Parent Name</Label>
+                  <Label htmlFor="bloodGroup">Blood Group</Label>
                   <Input
-                    id="parentName"
-                    placeholder="Parent/Guardian name"
-                    value={formData.parentName}
-                    onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
+                    id="bloodGroup"
+                    placeholder="e.g., B+"
+                    value={formData.bloodGroup}
+                    onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
                     disabled={isSubmitting}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="parentPhone">Parent Phone</Label>
+                  <Label htmlFor="address">Address</Label>
                   <Input
-                    id="parentPhone"
-                    placeholder="Phone number"
-                    value={formData.parentPhone}
-                    onChange={(e) => setFormData({ ...formData, parentPhone: e.target.value })}
+                    id="address"
+                    placeholder="Full address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     disabled={isSubmitting}
                   />
                 </div>
-              </div>
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  placeholder="Full address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  disabled={isSubmitting}
-                />
               </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
@@ -324,7 +300,10 @@ export default function StudentList() {
             </div>
           ) : filteredStudents.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <p>No students found. Add one to get started.</p>
+              <p>No students found for your assigned class.</p>
+              <p className="text-sm mt-2">Debug: Total students loaded: {students.length}</p>
+              <p className="text-sm">Debug: Filtered students: {filteredStudents.length}</p>
+              <p className="text-xs mt-2">Check browser console for detailed debugging info.</p>
             </div>
           ) : (
             <Table>
@@ -333,6 +312,7 @@ export default function StudentList() {
                   <TableHead>Admission No</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Gender</TableHead>
+                  <TableHead>Date of Birth</TableHead>
                   <TableHead>Parent</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Actions</TableHead>
@@ -342,10 +322,11 @@ export default function StudentList() {
                 {filteredStudents.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell>{student.admissionNumber}</TableCell>
-                    <TableCell className="font-medium">{student.firstName} {student.lastName}</TableCell>
+                    <TableCell className="font-medium">{student.name}</TableCell>
                     <TableCell>{student.gender}</TableCell>
+                    <TableCell>{student.dob ? new Date(student.dob).toLocaleDateString() : "-"}</TableCell>
                     <TableCell>{student.parentName || "-"}</TableCell>
-                    <TableCell>{student.parentPhone || "-"}</TableCell>
+                    <TableCell>{student.parentName ? "-" : "-"}</TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
