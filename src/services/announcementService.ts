@@ -134,7 +134,7 @@ export const announcementService = {
   getAllAnnouncements: async (filters?: {
     type?: string;
     priority?: string;
-    status?: "active" | "expired" | "scheduled";
+    status?: "all" | "active" | "expired" | "scheduled";
     search?: string;
     page?: number;
     limit?: number;
@@ -145,14 +145,22 @@ export const announcementService = {
     pages: number;
   }> => {
     const queryParams = new URLSearchParams();
+
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
+        if (key === "status") {
+          return;
+        }
+
         // Only add filter if it has a meaningful value (not "all" or empty)
         if (value !== undefined && value !== "" && value !== "all") {
           queryParams.append(key, String(value));
         }
       });
     }
+
+    queryParams.append("status", filters?.status || "all");
+
     // API returns: { success, count, total, page, pages, data: [...] }
     // We need to use getRaw to get the full response and handle it properly
     const response = await apiClient.getRaw<{
@@ -162,7 +170,7 @@ export const announcementService = {
       page: number;
       pages: number;
       data: Announcement[];
-    }>(`announcements?${queryParams}`);
+    }>(`announcements?${queryParams.toString()}`);
     
     return {
       data: response.data || [],
