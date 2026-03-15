@@ -11,6 +11,7 @@ import SuperAdminLayout from "./components/SuperAdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Students from "./pages/admin/Students";
 import StudentAdmission from "./pages/admin/StudentAdmission";
+import PartialAdmissions from "./pages/admin/PartialAdmissions";
 import AttendanceMarking from "@/pages/admin/AttendanceMarking";
 import AttendanceOverview from "@/pages/admin/AttendanceOverview";
 import Behaviour from "@/pages/admin/Behaviour";
@@ -92,6 +93,7 @@ const App = () => (
             <Route path="academic-years" element={<AcademicYears />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="students" element={<Students />} />
+            <Route path="students/partial" element={<PartialAdmissions />} />
             <Route path="students/admission" element={<StudentAdmission />} />
             <Route path="attendance/marking" element={<AttendanceMarking />} />
             <Route path="attendance/overview" element={<AttendanceOverview />} />

@@ -1,6 +1,41 @@
 import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
 
+export interface PartialAdmissionData {
+  firstName: string;
+  lastName: string;
+  gender: "Male" | "Female" | "Other";
+  dateOfBirth: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  emergencyContact?: string;
+}
+
+export interface CompleteAdmissionData {
+  classId: string;
+  sectionId: string;
+  parentUserId: string;
+  rollNumber: number;
+  bloodGroup: string;
+  admissionNumber: string;
+}
+
+export interface PartialStudent {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  gender: "Male" | "Female" | "Other";
+  dateOfBirth: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  emergencyContact?: string;
+  status: 'partial' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StudentAdmissionData {
   _id: string;
   firstName: string;
@@ -186,6 +221,74 @@ const extractStudentsArray = (response: StudentsListResponse): StudentApiRespons
 };
 
 export const studentService = {
+  // Partial Admission
+  createPartialAdmission: async (data: PartialAdmissionData): Promise<PartialStudent> => {
+    const response = await apiClient.post<PartialStudent>("admission/partial", data);
+    return response;
+  },
+
+  // Get partial admissions
+  getPartialAdmissions: async (filters?: {
+    status?: 'partial' | 'completed';
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: PartialStudent[]; pagination: any }> => {
+    const queryParams = new URLSearchParams();
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    
+    try {
+      // Use only the partial endpoint as requested
+      const response = await apiClient.get<any>(`admission/partial?${queryParams}`);
+      
+      console.log("Partial admissions API response:", response);
+      
+      // Handle different response structures
+      if (response && response.data && Array.isArray(response.data)) {
+        return {
+          data: response.data,
+          pagination: response.pagination || { page: 1, limit: 10, total: response.data.length, pages: 1 }
+        };
+      } else if (Array.isArray(response)) {
+        return {
+          data: response,
+          pagination: { page: 1, limit: 10, total: response.length, pages: 1 }
+        };
+      } else {
+        console.error('Invalid API response structure:', response);
+        return {
+          data: [],
+          pagination: { page: 1, limit: 10, total: 0, pages: 0 }
+        };
+      }
+    } catch (error) {
+      console.error('Failed to fetch partial admissions:', error);
+      return {
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, pages: 0 }
+      };
+    }
+  },
+
+  // Complete Admission
+  completeAdmission: async (studentId: string, data: CompleteAdmissionData): Promise<Student> => {
+    const response = await apiClient.put<StudentApiResponse>(`admission/${studentId}/complete`, data);
+    return normalizeStudent(response);
+  },
+
+  // Update Partial Student
+  updatePartialStudent: async (studentId: string, data: PartialAdmissionData): Promise<PartialStudent> => {
+    const response = await apiClient.put<PartialStudent>(`admission/partial/${studentId}`, data);
+    return response;
+  },
+
   // Student Admission
   admitStudent: async (data: StudentAdmissionData): Promise<Student> => {
     const response = await apiClient.post<StudentApiResponse>("admission", data);

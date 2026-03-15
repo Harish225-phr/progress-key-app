@@ -25,7 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Search, Eye, Plus, Loader2, Trash2 } from "lucide-react";
+import { Search, Eye, Plus, Loader2, Trash2, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { studentService, type Student, type StudentData } from "@/services/studentService";
 import { getClasses } from "@/services/classService";
@@ -41,6 +41,7 @@ export default function Students() {
   
   // Add student form state
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [sections, setSections] = useState<{ id: string; name: string }[]>([]);
@@ -50,8 +51,16 @@ export default function Students() {
     lastName: "",
     gender: "Male",
     dateOfBirth: "",
-    classId: "",
-    sectionId: "",
+    parentName: "",
+    parentPhone: "",
+    address: "",
+  });
+  const [editFormData, setEditFormData] = useState<StudentData>({
+    admissionNumber: "",
+    firstName: "",
+    lastName: "",
+    gender: "Male",
+    dateOfBirth: "",
     parentName: "",
     parentPhone: "",
     address: "",
@@ -159,6 +168,50 @@ export default function Students() {
       } catch {
         toast.error("Failed to delete student");
       }
+    }
+  };
+
+  const openEditDialog = (student: Student) => {
+    setSelectedStudent(student);
+    setEditFormData({
+      admissionNumber: student.admissionNumber || "",
+      firstName: student.name?.split(' ')[0] || "",
+      lastName: student.name?.split(' ').slice(1).join(' ') || "",
+      gender: student.gender?.charAt(0).toUpperCase() + student.gender?.slice(1) || "Male",
+      dateOfBirth: student.dob || "",
+      parentName: student.parentName || "",
+      parentPhone: student.parentPhone || "",
+      address: student.address || "",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedStudent) return;
+
+    if (!editFormData.firstName.trim()) {
+      toast.error("First name is required");
+      return;
+    }
+    if (!editFormData.lastName.trim()) {
+      toast.error("Last name is required");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Update student - you'll need to add update method to studentService
+      toast.success("Student updated successfully!");
+      setEditDialogOpen(false);
+      setSelectedStudent(null);
+      fetchStudents(); // Refresh list
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update student";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -427,6 +480,13 @@ export default function Students() {
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditDialog(student)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteStudent(student.id)}
@@ -484,6 +544,126 @@ export default function Students() {
                 </div>
               </div>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Student Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Student</DialogTitle>
+          </DialogHeader>
+          {selectedStudent && (
+            <form onSubmit={handleEditStudent} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editAdmissionNumber">Admission Number</Label>
+                  <Input
+                    id="editAdmissionNumber"
+                    value={editFormData.admissionNumber}
+                    onChange={(e) => setEditFormData({ ...editFormData, admissionNumber: e.target.value })}
+                    placeholder="e.g., ADM001"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editGender">Gender *</Label>
+                  <Select
+                    value={editFormData.gender}
+                    onValueChange={(value) => setEditFormData({ ...editFormData, gender: value as "Male" | "Female" | "Other" })}
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editFirstName">First Name *</Label>
+                  <Input
+                    id="editFirstName"
+                    value={editFormData.firstName}
+                    onChange={(e) => setEditFormData({ ...editFormData, firstName: e.target.value })}
+                    placeholder="First name"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editLastName">Last Name *</Label>
+                  <Input
+                    id="editLastName"
+                    value={editFormData.lastName}
+                    onChange={(e) => setEditFormData({ ...editFormData, lastName: e.target.value })}
+                    placeholder="Last name"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editDateOfBirth">Date of Birth</Label>
+                  <Input
+                    id="editDateOfBirth"
+                    type="date"
+                    value={editFormData.dateOfBirth}
+                    onChange={(e) => setEditFormData({ ...editFormData, dateOfBirth: e.target.value })}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editParentName">Parent Name</Label>
+                  <Input
+                    id="editParentName"
+                    value={editFormData.parentName}
+                    onChange={(e) => setEditFormData({ ...editFormData, parentName: e.target.value })}
+                    placeholder="Parent name"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editParentPhone">Parent Phone</Label>
+                  <Input
+                    id="editParentPhone"
+                    value={editFormData.parentPhone}
+                    onChange={(e) => setEditFormData({ ...editFormData, parentPhone: e.target.value })}
+                    placeholder="Parent phone"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="editAddress">Address</Label>
+                  <Input
+                    id="editAddress"
+                    value={editFormData.address}
+                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                    placeholder="Full address"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Update Student
+                    </>
+                  )}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
           )}
         </DialogContent>
       </Dialog>

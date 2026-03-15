@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { studentService, type StudentAdmissionData } from "@/services/studentService";
+import { studentService, type StudentAdmissionData, type PartialAdmissionData } from "@/services/studentService";
 import { getClasses } from "@/services/classService";
 import { getSectionsByClassId } from "@/services/classService";
 import { academicYearService } from "@/services/academicYearService";
@@ -52,7 +52,18 @@ export default function StudentAdmission() {
     bloodGroup: "",
   });
 
-  const [admissionMode, setAdmissionMode] = useState<"quick" | "full">("quick");
+  const [partialFormData, setPartialFormData] = useState<PartialAdmissionData>({
+    firstName: "",
+    lastName: "",
+    gender: "Male",
+    dateOfBirth: "",
+    email: "",
+    phone: "",
+    address: "",
+    emergencyContact: "",
+  });
+
+  const [admissionMode, setAdmissionMode] = useState<"partial" | "quick" | "full">("partial");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,6 +113,10 @@ export default function StudentAdmission() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handlePartialInputChange = (field: keyof PartialAdmissionData, value: string) => {
+    setPartialFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
   const generateAdmissionNumber = () => {
     const year = new Date().getFullYear();
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0");
@@ -120,6 +135,52 @@ export default function StudentAdmission() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Partial admission validation
+    if (admissionMode === "partial") {
+      if (!partialFormData.firstName.trim()) {
+        toast.error("First name is required");
+        return;
+      }
+
+      if (!partialFormData.lastName.trim()) {
+        toast.error("Last name is required");
+        return;
+      }
+
+      if (!partialFormData.dateOfBirth) {
+        toast.error("Date of birth is required");
+        return;
+      }
+
+      if (!partialFormData.gender) {
+        toast.error("Gender is required");
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        await studentService.createPartialAdmission(partialFormData);
+        toast.success("Partial admission created successfully!");
+        setPartialFormData({
+          firstName: "",
+          lastName: "",
+          gender: "Male",
+          dateOfBirth: "",
+          email: "",
+          phone: "",
+          address: "",
+          emergencyContact: "",
+        });
+        navigate("/admin/students/partial");
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to create partial admission";
+        toast.error(errorMessage);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     // Basic validation for quick mode
     if (!formData.firstName.trim()) {
@@ -217,12 +278,20 @@ export default function StudentAdmission() {
         <div>
           <h1 className="text-3xl font-bold">Student Admission</h1>
           <p className="text-muted-foreground">
-            {admissionMode === "quick" 
+            {admissionMode === "partial" 
+              ? "Partial admission with basic information (can be completed later)" 
+              : admissionMode === "quick" 
               ? "Quick admission with basic information" 
               : "Complete admission with class assignment"}
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant={admissionMode === "partial" ? "default" : "outline"}
+            onClick={() => setAdmissionMode("partial")}
+          >
+            Partial Admission
+          </Button>
           <Button
             variant={admissionMode === "quick" ? "default" : "outline"}
             onClick={() => setAdmissionMode("quick")}
@@ -241,43 +310,141 @@ export default function StudentAdmission() {
       <Card>
         <CardHeader>
           <CardTitle>
-            {admissionMode === "quick" ? "Basic Information" : "Complete Information"}
+            {admissionMode === "partial" ? "Partial Admission - Basic Information" : 
+             admissionMode === "quick" ? "Quick Admission - Basic Information" : 
+             "Full Admission - Complete Information"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Required Fields - Always Show */}
-            <div>
-              <Label htmlFor="firstName">First Name *</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange("firstName", e.target.value)}
-                placeholder="Enter student's first name"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="lastName">Last Name *</Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange("lastName", e.target.value)}
-                placeholder="Enter student's last name"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="admissionNumber">Admission Number *</Label>
-              <div className="flex gap-2">
+          {admissionMode === "partial" ? (
+            // Partial Admission Form
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="partialFirstName">First Name *</Label>
                 <Input
-                  id="admissionNumber"
-                  value={formData.admissionNumber}
-                  onChange={(e) => handleInputChange("admissionNumber", e.target.value)}
-                  placeholder="Auto-generated or enter manually"
+                  id="partialFirstName"
+                  value={partialFormData.firstName}
+                  onChange={(e) => handlePartialInputChange("firstName", e.target.value)}
+                  placeholder="Enter student's first name"
                   required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="partialLastName">Last Name *</Label>
+                <Input
+                  id="partialLastName"
+                  value={partialFormData.lastName}
+                  onChange={(e) => handlePartialInputChange("lastName", e.target.value)}
+                  placeholder="Enter student's last name"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="partialGender">Gender *</Label>
+                <Select
+                  value={partialFormData.gender}
+                  onValueChange={(value) => handlePartialInputChange("gender", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="partialDateOfBirth">Date of Birth *</Label>
+                <Input
+                  id="partialDateOfBirth"
+                  type="date"
+                  value={partialFormData.dateOfBirth}
+                  onChange={(e) => handlePartialInputChange("dateOfBirth", e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="partialEmail">Email</Label>
+                <Input
+                  id="partialEmail"
+                  type="email"
+                  value={partialFormData.email}
+                  onChange={(e) => handlePartialInputChange("email", e.target.value)}
+                  placeholder="Enter student's email"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="partialPhone">Phone</Label>
+                <Input
+                  id="partialPhone"
+                  value={partialFormData.phone}
+                  onChange={(e) => handlePartialInputChange("phone", e.target.value)}
+                  placeholder="Enter student's phone number"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="partialAddress">Address</Label>
+                <Input
+                  id="partialAddress"
+                  value={partialFormData.address}
+                  onChange={(e) => handlePartialInputChange("address", e.target.value)}
+                  placeholder="Enter student's address"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="partialEmergencyContact">Emergency Contact</Label>
+                <Input
+                  id="partialEmergencyContact"
+                  value={partialFormData.emergencyContact}
+                  onChange={(e) => handlePartialInputChange("emergencyContact", e.target.value)}
+                  placeholder="Enter emergency contact number"
+                />
+              </div>
+            </div>
+          ) : (
+            // Quick/Full Admission Form (existing)
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Required Fields - Always Show */}
+              <div>
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange("firstName", e.target.value)}
+                  placeholder="Enter student's first name"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange("lastName", e.target.value)}
+                  placeholder="Enter student's last name"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="admissionNumber">Admission Number *</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="admissionNumber"
+                    value={formData.admissionNumber}
+                    onChange={(e) => handleInputChange("admissionNumber", e.target.value)}
+                    placeholder="Auto-generated or enter manually"
+                    required
                 />
                 <Button
                   type="button"

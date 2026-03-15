@@ -45,6 +45,7 @@ const menuItems = [
     label: "Student Management", 
     path: "/admin/students",
     children: [
+      { icon: Users, label: "Partial Admissions", path: "/admin/students/partial" },
       { icon: Users, label: "Student Admission", path: "/admin/students/admission" },
       { icon: Users, label: "Student List", path: "/admin/students" },
     ]

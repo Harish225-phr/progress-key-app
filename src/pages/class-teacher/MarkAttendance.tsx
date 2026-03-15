@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Calendar, CheckCircle, Users, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { attendanceService, type Enrollment, type AttendanceStatus } from "@/services/attendanceService";
 import { classTeacherService } from "@/services/classTeacherService";
+import { studentService } from "@/services/studentService";
 import { useAcademicYear } from "@/hooks/useAcademicYear";
 
 interface AttendanceRecord {
@@ -20,7 +21,7 @@ interface AttendanceRecord {
 }
 
 export default function MarkAttendance() {
-  const { current: currentAcademicYear } = useAcademicYear({ fetchListOnMount: false });
+  const { current: currentAcademicYear } = useAcademicYear({ fetchListOnMount: true });
   const [students, setStudents] = useState<Enrollment[]>([]);
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
   const [myAssignment, setMyAssignment] = useState<any>(null);
@@ -38,11 +39,19 @@ export default function MarkAttendance() {
 
   useEffect(() => {
     fetchData();
-  }, [selectedDate]);
+  }, [selectedDate, currentAcademicYear]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      
+      console.log("Current academic year:", currentAcademicYear);
+      
+      if (!currentAcademicYear) {
+        console.log("No academic year available, waiting...");
+        setLoading(false);
+        return;
+      }
       
       // Get teacher's assigned class
       const assignments = await classTeacherService.getMyClasses();
@@ -55,19 +64,25 @@ export default function MarkAttendance() {
       const assignment = assignments[0];
       setMyAssignment(assignment);
 
-      if (!currentAcademicYear) {
-        setLoading(false);
-        return;
-      }
+      // Get students for the assigned class using admission API (backend filters by teacher's assignment)
+      const studentsData = await studentService.getAll();
+      
+      console.log("Students for attendance:", studentsData);
+      
+      // Convert students to enrollment-like format for attendance
+      const enrollmentLikeStudents = studentsData.map(student => ({
+        _id: student.id,
+        studentId: {
+          _id: student.id,
+          firstName: student.name.split(' ')[0] || '',
+          lastName: student.name.split(' ').slice(1).join(' ') || '',
+          admissionNumber: student.admissionNumber,
+        },
+        rollNumber: student.rollNumber || undefined,
+      }));
 
-      // Get students for the assigned class
-      const enrollments = await attendanceService.getEnrollments({
-        academicYearId: currentAcademicYear._id,
-        classId: assignment.classId,
-        sectionId: assignment.sectionId,
-      });
-
-      setStudents(enrollments);
+      console.log("Converted enrollment data:", enrollmentLikeStudents);
+      setStudents(enrollmentLikeStudents);
 
       // Check if attendance already exists for this date
       try {
@@ -78,6 +93,8 @@ export default function MarkAttendance() {
           date: selectedDate,
         });
 
+        console.log("Existing attendance summary:", attendanceSummary);
+
         // Set existing attendance
         const existing: Record<string, AttendanceStatus> = {};
         attendanceSummary.attendance.forEach(record => {
@@ -86,6 +103,7 @@ export default function MarkAttendance() {
         setExistingAttendance(existing);
         setAttendance(existing);
       } catch (error) {
+        console.log("No existing attendance for this date");
         // No existing attendance, start fresh
         setAttendance({});
         setExistingAttendance({});
@@ -312,7 +330,9 @@ export default function MarkAttendance() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {students.map((student) => (
+            {students.map((student) => {
+              console.log("Rendering student:", student);
+              return (
               <div
                 key={student._id}
                 className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent/5 transition-colors"
@@ -321,10 +341,10 @@ export default function MarkAttendance() {
                   <div className="flex items-center gap-3">
                     <div>
                       <p className="font-medium">
-                        {student.studentId.firstName} {student.studentId.lastName}
+                        {student.studentId?.firstName} {student.studentId?.lastName || 'Unknown Student'}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Roll No: {student.rollNumber || "N/A"} | Admission: {student.studentId.admissionNumber}
+                        Roll No: {student.rollNumber || "N/A"} | Admission: {student.studentId?.admissionNumber || "N/A"}
                       </p>
                     </div>
                   </div>
@@ -355,7 +375,8 @@ export default function MarkAttendance() {
                   </Badge>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-6 flex gap-4">
